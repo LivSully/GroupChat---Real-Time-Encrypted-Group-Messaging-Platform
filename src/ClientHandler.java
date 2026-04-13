@@ -32,7 +32,6 @@ public class ClientHandler implements Runnable {
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            String encryptedMsg;
             // Listens for an incoming, encrypted message from the client
             // When the encrypted message is received, it is broadcasted to all of the
             // clients connected to the server
