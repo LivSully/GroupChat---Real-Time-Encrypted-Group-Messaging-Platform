@@ -138,4 +138,13 @@ public class Server {
         return true;
     }
 
+    public synchronized List<String> getRoomHistory(String roomName) {
+        Room room = rooms.get(roomName);
+        if (room == null) {
+            return null; // Room does not exist
+        }
+
+        return room.getHistory();
+    }
+
 }

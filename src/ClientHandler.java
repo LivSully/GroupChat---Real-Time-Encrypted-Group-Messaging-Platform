@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -69,7 +70,18 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleMessage(String line) {
-
+        // Expected format: MSG|RoomName|<encrypted message>
+        String[] parts = line.split("\\|", 3);
+        if (parts.length != 3) {
+            sendToClient("ERROR|Invalid MSG format");
+            return;
+        }
+        String roomName = parts[1].trim();
+        String encryptedMessage = parts[2].trim();
+        boolean success = server.broadcastToRoom(roomName, encryptedMessage, this);
+        if (!success) {
+            sendToClient("ERROR|Room does not exist or you are not a member");
+        }
     }
 
     private void handleCreateRoom(String line) {
@@ -128,7 +140,25 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleOpenRoom(String line) { 
+        // Expected format: OPEN|RoomName
+        String[] parts = line.split("\\|");
+        if (parts.length != 2) {
+            sendToClient("ERROR|Invalid OPEN format");
+            return;
+        }
+        String roomName = parts[1].trim();
+        List<String> history = server.getRoomHistory(roomName);
+        if (history == null) {
+            sendToClient("ERROR|Room does not exist");
+            return;
+        }
+        // Send each encrypted line back to the client
+        for (String encryptedMsg : history) {
+            sendToClient("HISTORY|" + roomName + "|" + encryptedMsg);
+        }
 
+        // Signal that history is done
+        sendToClient("HISTORY_END|" + roomName);
     }
 
     public void sendToClient(String msg) {

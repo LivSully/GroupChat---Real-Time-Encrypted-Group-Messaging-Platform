@@ -7,6 +7,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 //import java.util.HashSet;
 //import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 public class Room {
     private final String name;
@@ -84,6 +88,22 @@ public class Room {
 
     public ClientHandler[] getMembers() {
         return members;
+    }
+
+    public List<String> getHistory() {
+        List<String> lines = new ArrayList<>();
+        if (!new File(chatlogFilePath).exists()) {
+            return lines; // No history if file doesn't exist
+        }
+        try (BufferedReader br = new BufferedReader(new FileReader(chatlogFilePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                lines.add(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lines;
     }
 
 }
