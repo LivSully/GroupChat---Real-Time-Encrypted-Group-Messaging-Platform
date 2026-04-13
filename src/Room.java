@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class Room {
     private final String name;
-    private Set<ClientHandler> members = new HashSet<>();
+    private final ClientHandler[] members;
     private int memberCount;
     private final String chatlogFilePath;
 
