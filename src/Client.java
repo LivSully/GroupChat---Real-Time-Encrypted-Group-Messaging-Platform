@@ -45,12 +45,7 @@ public class Client {
 
     // Encrypts and sends any command to the server.
     private void sendCommand(String command) {
-        try {
-            String encrypted = AESUtil.encrypt(command);
-            out.println(encrypted);
-        } catch (Exception e) {
-            gui.appendMessage("Encryption error while sending command.");
-        }
+       out.println(command);
     }
 
     //Adds a room locally to the client's room array.
@@ -162,9 +157,14 @@ public class Client {
             gui.appendMessage("No room selected.");
             return;
         }
-        sendCommand("MSG|" + currentRoom + "|" + plaintext);
+        try {
+            String encrypted = AESUtil.encrypt(plaintext);
+            sendCommand("MSG|" + currentRoom + "|" + encrypted);
+        } catch (Exception e) {
+            gui.appendMessage("Encryption error while sending message.");
+        }
     }
-
+    
     // Handles responses and messages from the server.
      //Server sends encrypted lines, so decrypt first.
     /* */
