@@ -93,7 +93,21 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleJoinRoom(String line) {
-
+        // Expected format: JOIN|RoomName
+        String[] parts = line.split("\\|");
+        if (parts.length != 2) {
+            sendToClient("ERROR|Invalid JOIN command format");
+            return;
+        }
+        String roomName = parts[1];
+        // Ask server to add this user to the room
+        boolean joined = server.joinRoom(roomName, this);
+        if (joined) {
+            sendToClient("JOINED|" + roomName);
+            System.out.println("User " + username + " joined room: " + roomName);
+        } else {
+            sendToClient("ERROR|Room does not exist");
+        }
     }
 
     private void handleLeaveRoom(String line) {
