@@ -5,8 +5,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+//import java.util.HashSet;
+//import java.util.Set;
 
 public class Room {
     private final String name;
@@ -73,7 +73,7 @@ public class Room {
         }
     }
 
-    private void writeToLog(String message) {
+    public void writeToLog(String message) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(chatlogFilePath, true))) {
             writer.write(message);
             writer.newLine();
@@ -81,4 +81,9 @@ public class Room {
             System.out.println("Error writing to chat log for room " + name);
         }
     }
+
+    public ClientHandler[] getMembers() {
+        return members;
+    }
+
 }

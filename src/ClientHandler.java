@@ -26,6 +26,7 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
+            String line;
             // Sets up the input and output streams so the clients can communicate with the
             // server
             out = new PrintWriter(socket.getOutputStream(), true);
@@ -35,7 +36,7 @@ public class ClientHandler implements Runnable {
             // Listens for an incoming, encrypted message from the client
             // When the encrypted message is received, it is broadcasted to all of the
             // clients connected to the server
-            while ((line = in.readLine() != null)) {
+            while ((line = in.readLine()) != null) {
                 handleIncoming(line);
             }
         } catch (IOException e) {
@@ -111,7 +112,20 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleLeaveRoom(String line) {
+        // Expected format: MSG|RoomName|<encrypted_message>
+        String[] parts = line.split("\\|", 3);
+        if (parts.length != 3) {
+            sendToClient("ERROR|Invalid LEAVE command format");
+            return;
+        }
+        String roomName = parts[1].trim();
+        String encryptedMessage = parts[2].trim();
 
+        // Ask server to broadcast to the room
+        boolean success = server.broadcastToRoom(roomName, encryptedMessage, this);
+        if (!success) {
+            sendToClient("ERROR|Room does not exist or you are not a member");
+        }
     }
 
     private void handleOpenRoom(String line) { 
@@ -120,6 +134,10 @@ public class ClientHandler implements Runnable {
 
     public void sendToClient(String msg) {
         out.println(msg);
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     // Method that sends the encrypted message to the client

@@ -111,4 +111,31 @@ public class Server {
         System.out.println("Room created: " + roomName);
         return true;
     }
+
+    public synchronized boolean joinRoom(String roomName, ClientHandler client) {
+        Room room = rooms.get(roomName);
+        if (room != null) {
+            room.addMember(client);
+            return true;
+        }
+        return false; // Room does not exist
+    }
+
+    public synchronized boolean broadcastToRoom(String roomName, String encryptedMessage, ClientHandler sender) {
+        Room room = rooms.get(roomName);
+        if (room == null) {
+            return false; // Room does not exist
+        }
+        if (!room.hasMember(sender)) {
+            return false; // Sender is not a member of the room
+        }
+        // Write to log file
+        room.writeToLog(encryptedMessage);
+        // Send to all members
+        for (ClientHandler ch : room.getMembers()) {
+            ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
+        }
+        return true;
+    }
+
 }
