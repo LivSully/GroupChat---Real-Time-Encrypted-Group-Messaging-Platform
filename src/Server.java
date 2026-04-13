@@ -101,4 +101,14 @@ public class Server {
             e.printStackTrace();
         }
     }
+
+    public synchronized boolean createRoom(String roomName) {
+        if (rooms.containsKey(roomName)) {
+            return false; // Room already exists
+        }
+        Room room = new Room(roomName);
+        rooms.put(roomName, room);
+        System.out.println("Room created: " + roomName);
+        return true;
+    }
 }

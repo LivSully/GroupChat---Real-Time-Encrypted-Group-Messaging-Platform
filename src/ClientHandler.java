@@ -5,12 +5,15 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
     private Server server;
     private PrintWriter out;
     private BufferedReader in;
+    private String username;
 
     // Constructor method
     public ClientHandler(Socket socket, Server server) {
@@ -32,8 +35,8 @@ public class ClientHandler implements Runnable {
             // Listens for an incoming, encrypted message from the client
             // When the encrypted message is received, it is broadcasted to all of the
             // clients connected to the server
-            while ((encryptedMsg = in.readLine()) != null) {
-                server.broadcast(encryptedMsg, this);
+            while ((line = in.readLine() != null)) {
+                handleIncoming(line);
             }
         } catch (IOException e) {
             System.out.println("Error handling client: " + e.getMessage());
@@ -42,6 +45,67 @@ public class ClientHandler implements Runnable {
             server.removeClient(this);
             close();
         }
+    }
+
+    private void handleIncoming(String line) {
+        try {
+            if (line.startsWith("MSG|")) {
+                handleMessage(line);
+            } else if (line.startsWith("CREATE|")) {
+                handleCreateRoom(line);
+            } else if (line.startsWith("JOIN|")) {
+                handleJoinRoom(line);
+            } else if (line.startsWith("LEAVE|")) {
+                handleLeaveRoom(line);
+            } else if (line.startsWith("OPEN|")) {
+                handleOpenRoom(line);
+            } else {
+                // fallback for old behavior
+                server.broadcast(line, this);
+            }
+        } catch (Exception e) {
+            sendToClient("ERROR|Malformed command");
+        }
+    }
+
+    private void handleMessage(String line) {
+
+    }
+
+    private void handleCreateRoom(String line) {
+        // Expected format: CREATE|RoomName
+        String[] parts = line.split("\\|", 2);
+        if (parts.length < 2) {
+            sendToClient("ERROR|Invalid CREATE command format");
+            return;
+        }
+
+        // Ask server
+        String roomName = parts[1];
+        // Ask server to create the room
+        boolean created = server.createRoom(roomName);
+        if (created) {
+            sendToClient("ROOM_CREATED|" + roomName);
+        } else {
+            sendToClient("ERROR|Room already exists");
+        }
+        System.out.println("User " + username + " requested to create room: " + roomName);
+    }
+
+    private void handleJoinRoom(String line) {
+
+    }
+
+    private void handleLeaveRoom(String line) {
+
+    }
+
+    private void handleOpenRoom(String line) { 
+
+    }
+
+    public void sendToClient(String msg) {
+        out.println(msg);
     }
 
     // Method that sends the encrypted message to the client
