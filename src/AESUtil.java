@@ -3,6 +3,8 @@ package src;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
+import java.io.File;
+import java.nio.file.Files;
 
 /*
  * Utility class to handle AES encryption and decryption.
@@ -24,6 +26,11 @@ public class AESUtil {
         cipher.init(Cipher.ENCRYPT_MODE, key); // Initialize the cipher in encryption mode with the secret key
         byte[] encrypted = cipher.doFinal(data.getBytes()); // Perform the encryption operation
         return Base64.getEncoder().encodeToString(encrypted); // Encode to Base64 for safe transmission
+    }
+
+    public static byte[] imageToBase64(File imageFile) throws Exception {
+        byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+        return Base64.getEncoder().encode(imageBytes);
     }
 
     /**
