@@ -28,9 +28,11 @@ public class AESUtil {
         return Base64.getEncoder().encodeToString(encrypted); // Encode to Base64 for safe transmission
     }
 
-    public static byte[] imageToBase64(File imageFile) throws Exception {
-        byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
-        return Base64.getEncoder().encode(imageBytes);
+    public static byte[] encryptImage(byte[] imageBytes) throws Exception {
+        SecretKeySpec key = new SecretKeySpec(KEY.getBytes(), ALGORITHM);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, key);
+        return cipher.doFinal(imageBytes);
     }
 
     /**
