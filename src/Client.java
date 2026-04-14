@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Base64;
 
 import javax.swing.SwingUtilities;
 
@@ -42,6 +45,31 @@ public class Client {
         // Start listening for server messages
         new Thread(new ClientListener()).start();
     }
+    public void sendImage (File file){
+        if (file==null) return;
+        String currentRoom = getCurrentRoomName();
+        if (currentRoom==null){
+            gui.appendMessage("No Room Selected!!");
+            return;
+        }
+    
+    try {
+        // Read file into byte array
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
+
+        // Encrypt bytes (you'll add this method in AESUtil)
+        byte[] encryptedBytes = AESUtil.encryptImage(fileBytes);
+
+        // Convert to Base64 string so it can be sent as text
+        String encoded = Base64.getEncoder().encodeToString(encryptedBytes);
+
+        // Send command
+        sendCommand("IMG|" + currentRoom + "|" + file.getName() + "|" + encoded);
+
+    } catch (Exception e) {
+        gui.appendMessage("Error sending image.");
+    }
+}
 
     // Encrypts and sends any command to the server.
     private void sendCommand(String command) {
