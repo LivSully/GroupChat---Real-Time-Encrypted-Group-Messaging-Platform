@@ -204,8 +204,7 @@ public class Client {
 
                 while ((encryptedMsg = in.readLine()) != null) {
                     try {
-                        String decrypted = AESUtil.decrypt(encryptedMsg);
-                        handleServerMessage(decrypted);
+                        handleServerMessage(encryptedMsg);
                     } catch (Exception e) {
                         gui.appendMessage("[Error decrypting message]");
                     }
