@@ -224,38 +224,45 @@ public class Client {
      * Processes server responses.
      */
     private void handleServerMessage(String msg) {
-        if (msg.startsWith("USERNAME_SET|")) {
-            gui.appendMessage("Connected as " + username);
-        } else if (msg.startsWith("ROOM_CREATED|")) {
-            String[] parts = msg.split("\\|", 2);
-            if (parts.length == 2) {
-                addRoom(parts[1]);
-                gui.appendMessage("Room created: " + parts[1]);
-            }
-        } else if (msg.startsWith("JOINED|")) {
-            String[] parts = msg.split("\\|", 2);
-            if (parts.length == 2) {
-                addRoom(parts[1]);
-                gui.appendMessage("Joined room: " + parts[1]);
-            }
-        } else if (msg.startsWith("LEFT|")) {
-            String[] parts = msg.split("\\|", 2);
-            if (parts.length == 2) {
-                removeRoom(parts[1]);
-                gui.appendMessage("Left room: " + parts[1]);
-            }
-        } else if (msg.startsWith("ERROR|")) {
-            String[] parts = msg.split("\\|", 2);
-            if (parts.length == 2) {
-                gui.appendMessage("[Server Error] " + parts[1]);
-            } else {
-                gui.appendMessage("[Server Error]");
-            }
-        } else {
-            // normal chat message
-            gui.appendMessage(msg);
-        }
+
+    if (msg.startsWith("USERNAME_SET|")) {
+        gui.appendMessage("Connected as " + username);
+
+    } else if (msg.startsWith("ROOM_CREATED|")) {
+        String room = msg.split("\\|", 2)[1];
+        addRoom(room);
+        gui.appendMessage("Room created: " + room);
+
+    } else if (msg.startsWith("JOINED|")) {
+        String room = msg.split("\\|", 2)[1];
+        addRoom(room);
+        gui.appendMessage("Joined room: " + room);
+
+    } else if (msg.startsWith("LEFT|")) {
+        String room = msg.split("\\|", 2)[1];
+        removeRoom(room);
+        gui.appendMessage("Left room: " + room);
+
+    } else if (msg.startsWith("ERROR|")) {
+        gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);
+
     }
+    // ⭐ NEW: decrypt only the encrypted payload
+    else if (msg.startsWith("MSG|")) {
+        handleIncomingRoomMessage(msg);
+
+    } else if (msg.startsWith("HISTORY|")) {
+        handleIncomingHistory(msg);
+
+    } else if (msg.startsWith("HISTORY_END|")) {
+        // optional: tell GUI history is done
+    }
+
+    else {
+        // fallback
+        gui.appendMessage(msg);
+    }
+}
 
     /**
      * Disconnect method to close streams/socket.
