@@ -247,7 +247,7 @@ public class Client {
         gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);
 
     }
-    // ⭐ NEW: decrypt only the encrypted payload
+    // NEW: decrypt only the encrypted payload
     else if (msg.startsWith("MSG|")) {
         handleIncomingRoomMessage(msg);
 
@@ -257,18 +257,24 @@ public class Client {
     } else if (msg.startsWith("HISTORY_END|")) {
         // optional: tell GUI history is done
     }
-
+    else if (msg.startsWith("MSG|")) {
+    handleIncomingRoomMessage(msg);
+} 
+else if (msg.startsWith("HISTORY|")) {
+    handleIncomingHistory(msg);
+} 
     else {
         // fallback
         gui.appendMessage(msg);
     }
 }
     private void handleIncomingRoomMessage(String msg) {
+    
     String[] parts = msg.split("\\|", 4);
+    if (parts.length != 4) return;
     String room = parts[1];
     String sender = parts[2];
     String encryptedPayload = parts[3];
-
     try {
         String plaintext = AESUtil.decrypt(encryptedPayload);
         gui.receiveMessage(sender + ": " + plaintext);
@@ -276,6 +282,7 @@ public class Client {
         gui.appendMessage("[Error decrypting message]");
     }
 }
+
 
     //Disconnect method to close streams/socket.
     public void disconnect() {
@@ -295,7 +302,10 @@ public class Client {
     }
     //Handle Incoming History
     private void handleIncomingHistory(String msg) {
+    // Format: HISTORY|room|encrypted
     String[] parts = msg.split("\\|", 3);
+    if (parts.length != 3) return;
+
     String encryptedPayload = parts[2];
 
     try {
