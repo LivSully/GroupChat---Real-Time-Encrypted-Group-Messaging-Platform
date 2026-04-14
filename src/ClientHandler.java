@@ -122,22 +122,24 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleLeaveRoom(String line) {
-        // Expected format: MSG|RoomName|<encrypted_message>
-        String[] parts = line.split("\\|", 3);
-        if (parts.length != 3) {
-            sendToClient("ERROR|Invalid LEAVE command format");
-            return;
-        }
-        String roomName = parts[1].trim();
-        String encryptedMessage = parts[2].trim();
-
-        // Ask server to broadcast to the room
-        boolean success = server.broadcastToRoom(roomName, encryptedMessage, this);
-        if (!success) {
-            sendToClient("ERROR|Room does not exist or you are not a member");
-        }
+    private void handleLeaveRoom(String line) {// Expected format: LEAVE|RoomName
+    String[] parts = line.split("\\|");
+    if (parts.length != 2) {
+        sendToClient("ERROR|Invalid LEAVE command format");
+        return;
     }
+    String roomName = parts[1].trim();
+    Room room = server.getRoom(roomName);
+    if (room == null) {
+        sendToClient("ERROR|Room does not exist");
+        return;
+    }
+    // Remove the user from the room
+    room.removeMember(this);
+    // Notify the client
+    sendToClient("LEFT|" + roomName);
+    System.out.println("User " + username + " left room: " + roomName);
+}
 
     private void handleOpenRoom(String line) { 
         // Expected format: OPEN|RoomName
