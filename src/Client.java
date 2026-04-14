@@ -263,10 +263,21 @@ public class Client {
         gui.appendMessage(msg);
     }
 }
+    private void handleIncomingRoomMessage(String msg) {
+    String[] parts = msg.split("\\|", 4);
+    String room = parts[1];
+    String sender = parts[2];
+    String encryptedPayload = parts[3];
 
-    /**
-     * Disconnect method to close streams/socket.
-     */
+    try {
+        String plaintext = AESUtil.decrypt(encryptedPayload);
+        gui.receiveMessage(sender + ": " + plaintext);
+    } catch (Exception e) {
+        gui.appendMessage("[Error decrypting message]");
+    }
+}
+
+    //Disconnect method to close streams/socket.
     public void disconnect() {
         try {
             if (out != null) {
@@ -282,10 +293,19 @@ public class Client {
             e.printStackTrace();
         }
     }
+    //Handle Incoming History
+    private void handleIncomingHistory(String msg) {
+    String[] parts = msg.split("\\|", 3);
+    String encryptedPayload = parts[2];
 
-    /**
-     * Main method
-     */
+    try {
+        String plaintext = AESUtil.decrypt(encryptedPayload);
+        gui.receiveMessage(plaintext);
+    } catch (Exception e) {
+        gui.appendMessage("[Error decrypting history]");
+    }
+}
+    // Main method
     public static void main(String[] args) {
         ChatClientGUI gui = new ChatClientGUI("User");
         try {
