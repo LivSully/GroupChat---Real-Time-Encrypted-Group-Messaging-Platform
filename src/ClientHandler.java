@@ -21,6 +21,17 @@ public class ClientHandler implements Runnable {
         this.socket = socket;
         this.server = server;
     }
+    private void handleUser(String line) {
+    String[] parts = line.split("\\|");
+    if (parts.length != 2) {
+        sendToClient("ERROR|Invalid USER format");
+        return;
+    }
+    this.username = parts[1].trim();
+    // Confirm to client
+    sendToClient("USERNAME_SET|" + username);
+    System.out.println("User connected as: " + username);
+}
 
     // Method that listens for incoming messages from the client, and when a message
     // is received, it broadcasts the message to all clients through the server.
@@ -60,6 +71,8 @@ public class ClientHandler implements Runnable {
                 handleLeaveRoom(line);
             } else if (line.startsWith("OPEN|")) {
                 handleOpenRoom(line);
+            } else if (line.startsWith("USER|")){
+                handleUser(line);
             } else {
                 // fallback for old behavior
                 server.broadcast(line, this);
