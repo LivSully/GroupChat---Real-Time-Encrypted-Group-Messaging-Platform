@@ -1,4 +1,4 @@
-//NEW NEW 4/15/26 1258
+//NEW NEW 4/15/26 1340
 package src;
 
 import java.io.BufferedWriter;
@@ -89,7 +89,9 @@ public class Server {
         }
         System.out.println("Client disconnected.");
     }
-
+    public synchronized Room getRoom(String roomName) {
+        return rooms.get(roomName);
+    }
     // Main method that creates a new instance of the Server and starts the server
     // on port 1111
     public static void main(String[] args) {
@@ -133,8 +135,10 @@ public class Server {
         // Write to log file
         room.writeToLog(encryptedMessage);
         // Send to all members
-        for (ClientHandler ch : room.getMembers()) {
-            ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
+       for (ClientHandler ch : room.getMembers()) {
+            if (ch != null) {
+                ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
+            }
         }
         return true;
     }
