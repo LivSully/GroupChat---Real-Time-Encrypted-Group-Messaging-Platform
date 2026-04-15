@@ -1,15 +1,5 @@
+//NEW NEW 4/15/26 1258
 package src;
-/*
-This class represents the client side networking component
-of the Secure Chat system! It handles connecting to the server,
-sendign encrypted messages, recieving encrypted messages,
-decrypting them for the user to read, and updating the GUI.
-
-This class requires:
--ChatClientGUI (To display messages)
--AESUTIL (For all encryption and decryption)
--Server (For actual server connection)
-*/
 
 import java.awt.Color;
 import java.io.BufferedReader;
@@ -17,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Base64;
 
 import javax.swing.SwingUtilities;
 
@@ -27,76 +20,285 @@ public class Client {
     private PrintWriter out;
     // Input stream to receive messages
     private BufferedReader in;
-    // GUI so messages will be displayed
-    private ChatClientGUI gui;
+    // GUI reference
+    private ChatroomGUI gui;
     // Username of the user
     private String username;
-    // Server IP address and port
-    // NOTE: THESE MUST MATCH WHOEVER IS HOSTING SERVER
+    // Stores up to 10 joined room names
+    private String[] joinedRooms;
+    // Tracks which room is currently open/selected
+    private int currentRoomIndex;
+    // Server IP and port
     private static final String IP_ADDRESS = "10.2.130.128";
-    private static final int port = 1111;
+    private static final int PORT = 1111;
 
-    // Connect client to server and creates new thread to start listening
-    public Client(String host, int port, ChatClientGUI gui, String username) throws IOException {
+    public Client(String host, int port, ChatroomGUI gui, String username) throws IOException {
         this.gui = gui;
         this.username = username;
-        // Establish Connection
+        this.joinedRooms = new String[10];
+        this.currentRoomIndex = -1;
         socket = new Socket(host, port);
-        // Initialize in and out streams
         out = new PrintWriter(socket.getOutputStream(), true);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        // Tell server who this client is
+        sendCommand("USER|" + username);
+        // Start listening for server messages
         new Thread(new ClientListener()).start();
     }
+    public void sendImage (File file){
+        if (file==null) return;
+        String currentRoom = getCurrentRoomName();
+        if (currentRoom==null){
+            gui.appendMessage("No Room Selected!!");
+            return;
+        }
+    
+    try {
+        // Read file into byte array
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
 
-    // Formatting outgoing messages
-    public class MessageFactory {
-        // Username + (Message)
-        public static String createFormattedMessage(String username, String message) {
-            return username + ": " + message;
+        // Encrypt bytes (you'll add this method in AESUtil)
+        byte[] encryptedBytes = AESUtil.encryptImage(fileBytes);
+
+        // Convert to Base64 string so it can be sent as text
+        String encoded = Base64.getEncoder().encodeToString(encryptedBytes);
+
+        // Send command
+        sendCommand("IMG|" + currentRoom + "|" + file.getName() + "|" + encoded);
+
+    } catch (Exception e) {
+        gui.appendMessage("Error sending image.");
+    }
+}
+
+    // Encrypts and sends any command to the server.
+    private void sendCommand(String command) {
+       out.println(command);
+    }
+
+    //Adds a room locally to the client's room array.
+    public void addRoom(String roomName) {
+        if (roomName == null || roomName.isBlank()) {
+            return;
+        }
+        // prevent duplicates
+        for (int i = 0; i < joinedRooms.length; i++) {
+            if (roomName.equals(joinedRooms[i])) {
+                return;
+            }
+        }
+        for (int i = 0; i < joinedRooms.length; i++) {
+            if (joinedRooms[i] == null) {
+                joinedRooms[i] = roomName;
+
+                // if no room is currently selected, select first added room
+                if (currentRoomIndex == -1) {
+                    currentRoomIndex = i;
+                }
+                return;
+            }
+        }
+        gui.appendMessage("You cannot join more than 10 rooms.");
+    }
+
+    //Removes a room locally from the client's room array.
+    public void removeRoom(String roomName) {
+        for (int i = 0; i < joinedRooms.length; i++) {
+            if (roomName != null && roomName.equals(joinedRooms[i])) {
+                joinedRooms[i] = null;
+                if (currentRoomIndex == i) {
+                    currentRoomIndex = -1;
+                    // pick first available room if one exists
+                    for (int j = 0; j < joinedRooms.length; j++) {
+                        if (joinedRooms[j] != null) {
+                            currentRoomIndex = j;
+                            break;
+                        }
+                    }
+                }
+                return;
+            }
         }
     }
 
-    // encrypts message with AES then sends message
+    //Returns the array of joined rooms.
+
+    public String[] getJoinedRooms() {
+        return joinedRooms;
+    }
+
+    //Sets the currently selected room based on left-side tab index.
+    public void selectRoomByIndex(int index) {
+        if (index >= 0 && index < joinedRooms.length && joinedRooms[index] != null) {
+            currentRoomIndex = index;
+        }
+    }
+
+    // Returns the currently selected room name.
+    public String getCurrentRoomName() {
+        if (currentRoomIndex == -1) {
+            return null;
+        }
+        return joinedRooms[currentRoomIndex];
+    }
+
+    //Sends a request to create a room.
+    public void createRoom(String roomName) {
+        if (roomName == null || roomName.isBlank()) {
+            gui.appendMessage("Room name cannot be empty.");
+            return;
+        }
+
+        sendCommand("CREATE|" + roomName);
+    }
+
+    //Sends a request to join a room.
+    public void joinRoom(String roomName) {
+        if (roomName == null || roomName.isBlank()) {
+            gui.appendMessage("Room name cannot be empty.");
+            return;
+        }
+
+        sendCommand("JOIN|" + roomName);
+    }
+
+    //Sends a request to leave a room.
+    public void leaveRoom(String roomName) {
+        if (roomName == null || roomName.isBlank()) {
+            gui.appendMessage("Room name cannot be empty.");
+            return;
+        }
+
+        sendCommand("LEAVE|" + roomName);
+    }
+
+    /*
+     * Sends a message to the currently selected room.
+     * User does NOT type room name manually; client adds it automatically.
+     */
     public void sendMessage(String plaintext) {
+        if (plaintext == null || plaintext.isBlank()) {
+            return;
+        }
+        String currentRoom = getCurrentRoomName();
+        if (currentRoom == null) {
+            gui.appendMessage("No room selected.");
+            return;
+        }
         try {
-            // Format the mesage with username
-            String fullMessage = MessageFactory.createFormattedMessage(username, plaintext);
-            // Encrypts the message with AES
-            String encrypted = AESUtil.encrypt(fullMessage);
-            // Send message
-            out.println(encrypted);
+            String encrypted = AESUtil.encrypt(plaintext);
+            sendCommand("MSG|" + currentRoom + "|" + encrypted);
         } catch (Exception e) {
-            gui.appendMessage("Encryption error");
+            gui.appendMessage("Encryption error while sending message.");
         }
     }
-
-    // Listener runs a separate thread and listens for any incoming message
+    
+    // Handles responses and messages from the server.
+     //Server sends encrypted lines, so decrypt first.
+    /* */
     private class ClientListener implements Runnable {
+        @Override
         public void run() {
             try {
                 String encryptedMsg;
-                // Continuously listening for messge
+
                 while ((encryptedMsg = in.readLine()) != null) {
                     try {
-                        // Decrypt any received mesage
-                        String decrypted = AESUtil.decrypt(encryptedMsg);
-                        // Display the message
-                        gui.appendMessage(decrypted);
+                        handleServerMessage(encryptedMsg);
                     } catch (Exception e) {
                         gui.appendMessage("[Error decrypting message]");
                     }
                 }
-                // If connection is lost, update indicator to any set color(red right now)
+
                 SwingUtilities.invokeLater(() -> {
                     gui.getStatusIndicator().setBackground(Color.RED);
                 });
+
             } catch (IOException e) {
                 gui.appendMessage("Disconnected from server.");
             }
         }
     }
+    public void openRoom(String roomName) {
+        if (roomName != null && !roomName.isBlank()) {
+            sendCommand("OPEN|" + roomName);
+        }
+    }
+    private void handleIncomingImage(String msg) {
+        String[] parts = msg.split("\\|", 5);
+            if (parts.length != 5) return;
+        String room = parts[1];
+        String sender = parts[2];
+        String fileName = parts[3];
+        String encryptedPayload = parts[4];
+            try {
+                byte[] encryptedBytes = Base64.getDecoder().decode(encryptedPayload);
+                byte[] imageBytes = AESUtil.decryptImage(encryptedBytes);
+            gui.receiveImage(room, sender, fileName, imageBytes);
+        } catch (Exception e) {
+            gui.appendSystemMessage("[Error decrypting image]");
+        }
+    }
 
-    // Disconnect method to close program when client leaves
+    /**
+     * Processes server responses.
+     */
+    private void handleServerMessage(String msg) {
+
+    if (msg.startsWith("USERNAME_SET|")) {
+        gui.appendMessage("Connected as " + username);
+
+    } else if (msg.startsWith("ROOM_CREATED|")) {
+        String room = msg.split("\\|", 2)[1];
+        addRoom(room);
+        gui.appendMessage("Room created: " + room);
+
+    } else if (msg.startsWith("JOINED|")) {
+        String room = msg.split("\\|", 2)[1];
+        addRoom(room);
+        gui.appendMessage("Joined room: " + room);
+
+    } else if (msg.startsWith("LEFT|")) {
+        String room = msg.split("\\|", 2)[1];
+        removeRoom(room);
+        gui.appendMessage("Left room: " + room);
+
+    } else if (msg.startsWith("ERROR|")) {
+        gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);
+
+    }
+    // NEW: decrypt only the encrypted payload
+    else if (msg.startsWith("MSG|")) {
+        handleIncomingRoomMessage(msg);
+
+    } else if (msg.startsWith("HISTORY|")) {
+        handleIncomingHistory(msg);
+
+    } else if (msg.startsWith("HISTORY_END|")) {
+        // optional: tell GUI history is done
+    }
+    else {
+        // fallback
+        gui.appendMessage(msg);
+    }
+}
+    private void handleIncomingRoomMessage(String msg) {
+    
+    String[] parts = msg.split("\\|", 4);
+    if (parts.length != 4) return;
+    String room = parts[1];
+    String sender = parts[2];
+    String encryptedPayload = parts[3];
+    try {
+        String plaintext = AESUtil.decrypt(encryptedPayload);
+        gui.receiveMessage(sender + ": " + plaintext);
+    } catch (Exception e) {
+        gui.appendMessage("[Error decrypting message]");
+    }
+}
+
+
+    //Disconnect method to close streams/socket.
     public void disconnect() {
         try {
             if (out != null) {
@@ -112,13 +314,26 @@ public class Client {
             e.printStackTrace();
         }
     }
+    //Handle Incoming History
+    private void handleIncomingHistory(String msg) {
+    // Format: HISTORY|room|encrypted
+    String[] parts = msg.split("\\|", 3);
+    if (parts.length != 3) return;
 
-    // Main Method
+    String encryptedPayload = parts[2];
+
+    try {
+        String plaintext = AESUtil.decrypt(encryptedPayload);
+        gui.receiveMessage(plaintext);
+    } catch (Exception e) {
+        gui.appendMessage("[Error decrypting history]");
+    }
+}
+    // Main method
     public static void main(String[] args) {
-        ChatClientGUI gui = new ChatClientGUI("User");
+        ChatroomGUI gui = new ChatroomGUI("User");
         try {
-            // ip address goes where localhost is
-            gui.connect(IP_ADDRESS, port);
+            gui.connect(IP_ADDRESS, PORT);
         } catch (IOException e) {
             e.printStackTrace();
         }

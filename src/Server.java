@@ -1,3 +1,4 @@
+//NEW NEW 4/15/26 1340
 package src;
 
 import java.io.BufferedWriter;
@@ -6,11 +7,13 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Server {
     private static Server instance;
-
+    private Map<String, Room> rooms = new HashMap<>();
     public static Server getInstance() {
         if (instance == null)
             instance = new Server();
@@ -86,7 +89,9 @@ public class Server {
         }
         System.out.println("Client disconnected.");
     }
-
+    public synchronized Room getRoom(String roomName) {
+        return rooms.get(roomName);
+    }
     // Main method that creates a new instance of the Server and starts the server
     // on port 1111
     public static void main(String[] args) {
@@ -99,4 +104,52 @@ public class Server {
             e.printStackTrace();
         }
     }
+
+    public synchronized boolean createRoom(String roomName) {
+        if (rooms.containsKey(roomName)) {
+            return false; // Room already exists
+        }
+        Room room = new Room(roomName);
+        rooms.put(roomName, room);
+        System.out.println("Room created: " + roomName);
+        return true;
+    }
+
+    public synchronized boolean joinRoom(String roomName, ClientHandler client) {
+        Room room = rooms.get(roomName);
+        if (room != null) {
+            room.addMember(client);
+            return true;
+        }
+        return false; // Room does not exist
+    }
+
+    public synchronized boolean broadcastToRoom(String roomName, String encryptedMessage, ClientHandler sender) {
+        Room room = rooms.get(roomName);
+        if (room == null) {
+            return false; // Room does not exist
+        }
+        if (!room.hasMember(sender)) {
+            return false; // Sender is not a member of the room
+        }
+        // Write to log file
+        room.writeToLog(encryptedMessage);
+        // Send to all members
+       for (ClientHandler ch : room.getMembers()) {
+            if (ch != null) {
+                ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
+            }
+        }
+        return true;
+    }
+
+    public synchronized List<String> getRoomHistory(String roomName) {
+        Room room = rooms.get(roomName);
+        if (room == null) {
+            return null; // Room does not exist
+        }
+
+        return room.getHistory();
+    }
+
 }
