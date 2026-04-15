@@ -68,7 +68,7 @@ public class ClientHandler implements Runnable {
             return;
         }
         String roomName = parts[1].trim();
-        String fileName = parts[2].trim();
+        String timestamp = parts[2].trim();
         String encryptedImage = parts[3].trim();
         Room room = server.getRoom(roomName);
         if (room == null || !room.hasMember(this)) {
@@ -85,7 +85,7 @@ public class ClientHandler implements Runnable {
 
     private void handleInvite(String line) {
         // Expected format: INVITE|RoomName|TargetUsername
-        String[] parts = line.split("\\|", 3);
+        String[] parts = line.split("\\|", 4);
         if (parts.length != 3) {
             sendToClient("ERROR|Invalid INVITE format");
             return;
