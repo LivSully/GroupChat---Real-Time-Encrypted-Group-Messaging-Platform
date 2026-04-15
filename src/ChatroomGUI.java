@@ -142,7 +142,7 @@ public class ChatroomGUI extends JFrame {
         JButton createBtn = new JButton("Create Chat");
         createBtn.setFont(FONT_MAIN);
         createBtn.setFocusPainted(false);
-        createBtn.addActionListener(e -> new InviteWindowGUI().setVisible(true));
+        createBtn.addActionListener(e -> new InviteWindowGUI(chatListModel).setVisible(true));
         btns.add(logoutBtn);
         btns.add(createBtn);
         header.add(btns, BorderLayout.EAST);
@@ -393,13 +393,5 @@ public class ChatroomGUI extends JFrame {
         public void disconnect() {
             client.disconnect();
         }
-    }
-
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ignored) {
-        }
-        SwingUtilities.invokeLater(ChatroomGUI::new);
     }
 }
