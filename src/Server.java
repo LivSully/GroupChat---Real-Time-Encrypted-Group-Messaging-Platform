@@ -16,7 +16,8 @@ import java.util.Map;
 public class Server {
     private static Server instance;
     private Map<String, Room> rooms = new HashMap<>();
-    //Singleton Server
+
+    // Singleton Server
     public static Server getInstance() {
         if (instance == null)
             instance = new Server();
@@ -141,18 +142,19 @@ public class Server {
 
     public synchronized boolean broadcastToRoom(String roomName, String encryptedMessage, ClientHandler sender) {
         Room room = rooms.get(roomName);
-        if (room == null) {
-            return false; // Room does not exist
-        }
-        if (!room.hasMember(sender)) {
-            return false; // Sender is not a member of the room
-        }
-        // Write to log file
+        if (room == null)
+            return false;
+        if (!room.hasMember(sender))
+            return false;
+
+        String timestamp = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("HH:mm")); // generate it here
+
         room.writeToLog("MSG|" + roomName + "|" + sender.getUsername() + "|" + timestamp + "|" + encryptedMessage);
-        // Send to all members
         for (ClientHandler ch : room.getMembers()) {
             if (ch != null && ch != sender) {
-                ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + timestamp + "|" + encryptedMessage);
+                ch.sendToClient(
+                        "MSG|" + roomName + "|" + sender.getUsername() + "|" + timestamp + "|" + encryptedMessage);
             }
         }
         return true;
