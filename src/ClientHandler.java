@@ -145,14 +145,13 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleMessage(String line) {
-        // Expected format: MSG|RoomName|<encrypted message>
-        String[] parts = line.split("\\|", 3);
-        if (parts.length != 3) {
+        String[] parts = line.split("\\|", 4); // was 3
+        if (parts.length != 4) {
             sendToClient("ERROR|Invalid MSG format");
             return;
         }
         String roomName = parts[1].trim();
-        String encryptedMessage = parts[2].trim();
+        String encryptedMessage = parts[3].trim(); // was parts[2]
         boolean success = server.broadcastToRoom(roomName, encryptedMessage, this);
         if (!success) {
             sendToClient("ERROR|Room does not exist or you are not a member");

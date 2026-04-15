@@ -297,7 +297,6 @@ public class ChatroomGUI extends JFrame {
         String encoded = EmojiRegistry.encode(raw);
 
         // Display immediately on our side (render shortcodes back to emoji for display)
-        addMessageBubble(username + ": " + EmojiRegistry.render(encoded), true);
         typingField.setText("");
         scrollToBottom();
 
