@@ -145,7 +145,7 @@ public class Server {
             return false; // Sender is not a member of the room
         }
         // Write to log file
-        room.writeToLog(encryptedMessage);
+        room.writeToLog(sender.getUsername() + "|" + encryptedMessage);
         // Send to all members
         for (ClientHandler ch : room.getMembers()) {
             if (ch != null && ch != sender) {

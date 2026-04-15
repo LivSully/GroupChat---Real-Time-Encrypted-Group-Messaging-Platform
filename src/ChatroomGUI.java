@@ -111,6 +111,7 @@ public class ChatroomGUI extends JFrame {
                     // Tell the client which room is now open so messages route correctly
                     int idx = chatList.getSelectedIndex();
                     client.selectRoomByIndex(idx);
+                    clearMessages();
                     client.openRoom(currentChat);
                 }
             }
@@ -122,6 +123,14 @@ public class ChatroomGUI extends JFrame {
         listScroll.setBorder(null);
         sidebar.add(listScroll, BorderLayout.CENTER);
         return sidebar;
+    }
+
+    public void clearMessages() {
+        SwingUtilities.invokeLater(() -> {
+            messagesPanel.removeAll();
+            messagesPanel.revalidate();
+            messagesPanel.repaint();
+        });
     }
 
     public void refreshRoomList() {

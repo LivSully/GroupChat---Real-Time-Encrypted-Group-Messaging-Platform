@@ -289,6 +289,9 @@ public class Client {
             joinRoom(room);
             gui.appendMessage("You were invited to room: " + room);
 
+        } else if (msg.startsWith("IMG|")) {
+            handleIncomingImage(msg);
+
         } else if (msg.startsWith("ERROR|")) {
             gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);
 
@@ -344,15 +347,19 @@ public class Client {
     // Handle Incoming History
     private void handleIncomingHistory(String msg) {
         // Format: HISTORY|room|encrypted
-        String[] parts = msg.split("\\|", 3);
-        if (parts.length != 3)
+        String[] parts = msg.split("\\|", 4);
+        if (parts.length < 3)
             return;
-
-        String encryptedPayload = parts[2];
-
         try {
-            String plaintext = AESUtil.decrypt(encryptedPayload);
-            gui.receiveMessage(plaintext);
+            if (parts.length == 4) {
+                String sender = parts[2];
+                String plaintext = AESUtil.decrypt(parts[3]);
+                gui.receiveMessage(sender + ": " + plaintext);
+            } else {
+                // fallback for old log format
+                String plaintext = AESUtil.decrypt(parts[2]);
+                gui.receiveMessage(plaintext);
+            }
         } catch (Exception e) {
             gui.appendMessage("[Error decrypting history]");
         }
