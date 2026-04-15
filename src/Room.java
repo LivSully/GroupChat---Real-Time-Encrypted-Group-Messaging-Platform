@@ -38,32 +38,17 @@ public class Room {
     public synchronized void addMember(ClientHandler client) {
         if (client == null || hasMember(client)) return;
 
-        for (int i = 0; i < members.length; i++) {
-            if (members[i] == null) {
-                members[i] = client;
-                memberCount++;
-                return;
-            }
-        }
+        members.add(client);
+        memberCount++;
     }
 
     public synchronized void removeMember(ClientHandler client) {
-        for (int i = 0; i < members.length; i++) {
-            if (members[i] == client) {
-                members[i] = null;
-                memberCount--;
-                return;
-            }
-        }
+        members.remove(client);
+        memberCount--;
     }
-
+    
     public synchronized boolean hasMember(ClientHandler client) {
-        for (ClientHandler member : members) {
-            if (member == client) {
-                return true;
-            }
-        }
-        return false;
+        return members.contains(client);
     }
 
     public synchronized void broadcast(String encryptedMessage, ClientHandler sender) {
@@ -85,7 +70,7 @@ public class Room {
         }
     }
 
-    public ClientHandler[] getMembers() {
+    public List<ClientHandler> getMembers() {
         return members;
     }
 
