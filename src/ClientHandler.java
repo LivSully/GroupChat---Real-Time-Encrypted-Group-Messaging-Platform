@@ -169,6 +169,7 @@ public class ClientHandler implements Runnable {
         // Ask server to create the room
         boolean created = server.createRoom(roomName);
         if (created) {
+            server.joinRoom(roomName, this);
             sendToClient("ROOM_CREATED|" + roomName);
         } else {
             sendToClient("ERROR|Room already exists");
