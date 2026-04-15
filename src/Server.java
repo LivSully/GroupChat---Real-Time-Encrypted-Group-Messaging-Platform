@@ -148,7 +148,7 @@ public class Server {
         room.writeToLog(encryptedMessage);
         // Send to all members
         for (ClientHandler ch : room.getMembers()) {
-            if (ch != null) {
+            if (ch != null && ch != sender) {
                 ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
             }
         }

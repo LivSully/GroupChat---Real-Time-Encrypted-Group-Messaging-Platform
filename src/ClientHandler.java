@@ -76,7 +76,7 @@ public class ClientHandler implements Runnable {
             return;
         }
         for (ClientHandler ch : room.getMembers()) {
-            if (ch != null) {
+            if (ch != null && ch != this) {
                 ch.sendToClient("IMG|" + roomName + "|" + username + "|" + fileName + "|" + encryptedImage);
             }
         }

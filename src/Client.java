@@ -97,11 +97,11 @@ public class Client {
                 if (currentRoomIndex == -1) {
                     currentRoomIndex = i;
                 }
+                SwingUtilities.invokeLater(() -> gui.refreshRoomList());
                 return;
             }
         }
         gui.appendMessage("You cannot join more than 10 rooms.");
-        SwingUtilities.invokeLater(() -> gui.refreshRoomList());
     }
 
     // Removes a room locally from the client's room array.
@@ -119,6 +119,7 @@ public class Client {
                         }
                     }
                 }
+                SwingUtilities.invokeLater(() -> gui.refreshRoomList());
                 return;
             }
         }
