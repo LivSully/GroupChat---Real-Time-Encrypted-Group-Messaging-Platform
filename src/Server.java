@@ -14,7 +14,7 @@ import java.util.Map;
 public class Server {
     private static Server instance;
     private Map<String, Room> rooms = new HashMap<>();
-
+    //Singleton Server
     public static Server getInstance() {
         if (instance == null)
             instance = new Server();
@@ -145,11 +145,11 @@ public class Server {
             return false; // Sender is not a member of the room
         }
         // Write to log file
-        room.writeToLog("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
+        room.writeToLog("MSG|" + roomName + "|" + sender.getUsername() + "|" + timestamp + "|" + encryptedMessage);
         // Send to all members
         for (ClientHandler ch : room.getMembers()) {
             if (ch != null && ch != sender) {
-                ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
+                ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + timestamp + "|" + encryptedMessage);
             }
         }
         return true;
