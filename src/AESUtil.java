@@ -1,6 +1,5 @@
 //NEW NEW 4/15/26 1258
 package src;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
@@ -27,6 +26,12 @@ public class AESUtil {
         cipher.init(Cipher.ENCRYPT_MODE, key); // Initialize the cipher in encryption mode with the secret key
         byte[] encrypted = cipher.doFinal(data.getBytes()); // Perform the encryption operation
         return Base64.getEncoder().encodeToString(encrypted); // Encode to Base64 for safe transmission
+    }
+    public static byte[] decryptImage(byte[] encryptedBytes) throws Exception {
+        SecretKeySpec key = new SecretKeySpec(KEY.getBytes(), ALGORITHM);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        return cipher.doFinal(encryptedBytes);
     }
 
     public static byte[] encryptImage(byte[] imageBytes) throws Exception {
