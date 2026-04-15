@@ -1,5 +1,6 @@
 //NEW NEW 4/15/26 1258
 package src;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.awt.Color;
@@ -29,7 +30,6 @@ public class Client {
     private String[] joinedRooms;
     // Tracks which room is currently open/selected
     private int currentRoomIndex;
-    private String timestamp;
     // Server IP and port
     private static final String IP_ADDRESS = "10.1.34.249";
     private static final int PORT = 1111;
@@ -197,7 +197,7 @@ public class Client {
         }
 
         String timestamp = LocalDateTime.now()
-        .format(DateTimeFormatter.ofPattern("HH:mm"));
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
 
         String currentRoom = getCurrentRoomName();
         if (currentRoom == null) {
@@ -318,13 +318,13 @@ public class Client {
     }
 
     private void handleIncomingRoomMessage(String msg) {
-
-        String[] parts = msg.split("\\|", 4);
-        if (parts.length != 4)
+        String[] parts = msg.split("\\|", 5); // was 4, now 5
+        if (parts.length != 5)
             return;
         String room = parts[1];
         String sender = parts[2];
-        String encryptedPayload = parts[3];
+        String timestamp = parts[3]; // parse the timestamp
+        String encryptedPayload = parts[4]; // was parts[3]
         try {
             String plaintext = AESUtil.decrypt(encryptedPayload);
             gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext);
@@ -360,14 +360,15 @@ public class Client {
         String line = parts[1];
 
         if (line.startsWith("MSG|")) {
-            String[] p = line.split("\\|", 4);
-            if (p.length != 4)
+            String[] p = line.split("\\|", 5); // was 4, now 5
+            if (p.length != 5)
                 return;
 
             String sender = p[2];
+            String timestamp = p[3]; // parse timestamp
             try {
-                String plaintext = AESUtil.decrypt(p[3]);
-                gui.receiveMessage(sender + ": " + plaintext);
+                String plaintext = AESUtil.decrypt(p[4]); // was p[3]
+                gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext); // added timestamp
             } catch (Exception e) {
                 gui.appendMessage("[Error decrypting history message]");
             }
@@ -384,7 +385,7 @@ public class Client {
             try {
                 byte[] encryptedBytes = Base64.getDecoder().decode(p[4]);
                 byte[] imageBytes = AESUtil.decryptImage(encryptedBytes);
-                gui.receiveImage(room, sender, fileName, imageBytes);
+                gui.receiveImage(room, sender, fileName, imageBytes); // no change needed here
             } catch (Exception e) {
                 gui.appendMessage("[Error loading history image]");
             }
