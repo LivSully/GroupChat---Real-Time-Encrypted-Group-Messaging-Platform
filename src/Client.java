@@ -346,22 +346,42 @@ public class Client {
 
     // Handle Incoming History
     private void handleIncomingHistory(String msg) {
-        // Format: HISTORY|room|encrypted
-        String[] parts = msg.split("\\|", 4);
-        if (parts.length < 3)
+        // Format: HISTORY|<full_saved_line>
+        String[] parts = msg.split("\\|", 2);
+        if (parts.length < 2)
             return;
-        try {
-            if (parts.length == 4) {
-                String sender = parts[2];
-                String plaintext = AESUtil.decrypt(parts[3]);
+
+        String line = parts[1];
+
+        if (line.startsWith("MSG|")) {
+            String[] p = line.split("\\|", 4);
+            if (p.length != 4)
+                return;
+
+            String sender = p[2];
+            try {
+                String plaintext = AESUtil.decrypt(p[3]);
                 gui.receiveMessage(sender + ": " + plaintext);
-            } else {
-                // fallback for old log format
-                String plaintext = AESUtil.decrypt(parts[2]);
-                gui.receiveMessage(plaintext);
+            } catch (Exception e) {
+                gui.appendMessage("[Error decrypting history message]");
             }
-        } catch (Exception e) {
-            gui.appendMessage("[Error decrypting history]");
+
+        } else if (line.startsWith("IMG|")) {
+            String[] p = line.split("\\|", 5);
+            if (p.length != 5)
+                return;
+
+            String room = p[1];
+            String sender = p[2];
+            String fileName = p[3];
+
+            try {
+                byte[] encryptedBytes = Base64.getDecoder().decode(p[4]);
+                byte[] imageBytes = AESUtil.decryptImage(encryptedBytes);
+                gui.receiveImage(room, sender, fileName, imageBytes);
+            } catch (Exception e) {
+                gui.appendMessage("[Error loading history image]");
+            }
         }
     }
 

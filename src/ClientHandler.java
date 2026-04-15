@@ -75,6 +75,7 @@ public class ClientHandler implements Runnable {
             sendToClient("ERROR|Room does not exist or you are not a member");
             return;
         }
+        room.writeToLog("IMG|" + roomName + "|" + username + "|" + fileName + "|" + encryptedImage);
         for (ClientHandler ch : room.getMembers()) {
             if (ch != null && ch != this) {
                 ch.sendToClient("IMG|" + roomName + "|" + username + "|" + fileName + "|" + encryptedImage);
@@ -229,7 +230,7 @@ public class ClientHandler implements Runnable {
         }
         // Send each encrypted line back to the client
         for (String encryptedMsg : history) {
-            sendToClient("HISTORY|" + roomName + "|" + encryptedMsg);
+            sendToClient("HISTORY|" + encryptedMsg);
         }
 
         // Signal that history is done
