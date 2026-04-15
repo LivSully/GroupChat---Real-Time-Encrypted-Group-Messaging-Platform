@@ -14,6 +14,7 @@ import java.util.Map;
 public class Server {
     private static Server instance;
     private Map<String, Room> rooms = new HashMap<>();
+
     public static Server getInstance() {
         if (instance == null)
             instance = new Server();
@@ -89,9 +90,20 @@ public class Server {
         }
         System.out.println("Client disconnected.");
     }
+
+    public synchronized ClientHandler getClientByUsername(String username) {
+        for (ClientHandler c : clients) {
+            if (c.getUsername() != null && c.getUsername().equals(username)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     public synchronized Room getRoom(String roomName) {
         return rooms.get(roomName);
     }
+
     // Main method that creates a new instance of the Server and starts the server
     // on port 1111
     public static void main(String[] args) {
@@ -135,7 +147,7 @@ public class Server {
         // Write to log file
         room.writeToLog(encryptedMessage);
         // Send to all members
-       for (ClientHandler ch : room.getMembers()) {
+        for (ClientHandler ch : room.getMembers()) {
             if (ch != null) {
                 ch.sendToClient("MSG|" + roomName + "|" + sender.getUsername() + "|" + encryptedMessage);
             }

@@ -162,9 +162,21 @@ public class ChatroomGUI extends JFrame {
         JButton createBtn = new JButton("Create Chat");
         createBtn.setFont(FONT_MAIN);
         createBtn.setFocusPainted(false);
-        createBtn.addActionListener(e -> new InviteWindowGUI(chatListModel).setVisible(true));
+        createBtn.addActionListener(e -> new InviteWindowGUI(client, null).setVisible(true));
         btns.add(logoutBtn);
         btns.add(createBtn);
+
+        JButton addUsersBtn = new JButton("Add Users");
+        addUsersBtn.addActionListener(e -> {
+            String currentRoom = client.getCurrentRoomName();
+            if (currentRoom == null) {
+                // No room selected, nothing to add to
+                appendMessage("Select a room first.");
+                return;
+            }
+            new InviteWindowGUI(client, currentRoom).setVisible(true);
+        });
+        btns.add(addUsersBtn);
 
         // Status indicator: green when connected, red on disconnect
         statusIndicator.setPreferredSize(new Dimension(12, 12));

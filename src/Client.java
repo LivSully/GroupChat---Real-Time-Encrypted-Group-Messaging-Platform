@@ -174,6 +174,15 @@ public class Client {
         sendCommand("LEAVE|" + roomName);
     }
 
+    // Sends a request to invite another user to a room.
+    public void inviteUser(String roomName, String targetUsername) {
+        if (roomName == null || roomName.isBlank() || targetUsername == null || targetUsername.isBlank()) {
+            gui.appendMessage("Room name and username cannot be empty.");
+            return;
+        }
+        sendCommand("INVITE|" + roomName + "|" + targetUsername);
+    }
+
     /*
      * Sends a message to the currently selected room.
      * User does NOT type room name manually; client adds it automatically.
@@ -267,6 +276,16 @@ public class Client {
             String room = msg.split("\\|", 2)[1];
             removeRoom(room);
             gui.appendMessage("Left room: " + room);
+
+        } else if (msg.startsWith("INVITE_SENT|")) {
+            String[] parts = msg.split("\\|", 3);
+            gui.appendMessage("Invite sent to " + parts[1] + " for room: " + parts[2]);
+
+        } else if (msg.startsWith("INVITED|")) {
+            // Another user invited YOU to a room — join it
+            String room = msg.split("\\|", 2)[1];
+            addRoom(room);
+            gui.appendMessage("You were invited to room: " + room);
 
         } else if (msg.startsWith("ERROR|")) {
             gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);

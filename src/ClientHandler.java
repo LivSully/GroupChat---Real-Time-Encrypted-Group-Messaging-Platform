@@ -22,17 +22,18 @@ public class ClientHandler implements Runnable {
         this.socket = socket;
         this.server = server;
     }
+
     private void handleUser(String line) {
-    String[] parts = line.split("\\|");
-    if (parts.length != 2) {
-        sendToClient("ERROR|Invalid USER format");
-        return;
+        String[] parts = line.split("\\|");
+        if (parts.length != 2) {
+            sendToClient("ERROR|Invalid USER format");
+            return;
+        }
+        this.username = parts[1].trim();
+        // Confirm to client
+        sendToClient("USERNAME_SET|" + username);
+        System.out.println("User connected as: " + username);
     }
-    this.username = parts[1].trim();
-    // Confirm to client
-    sendToClient("USERNAME_SET|" + username);
-    System.out.println("User connected as: " + username);
-}
 
     // Method that listens for incoming messages from the client, and when a message
     // is received, it broadcasts the message to all clients through the server.
@@ -59,6 +60,7 @@ public class ClientHandler implements Runnable {
             close();
         }
     }
+
     private void handleImage(String line) {
         String[] parts = line.split("\\|", 4);
         if (parts.length != 4) {
@@ -79,6 +81,35 @@ public class ClientHandler implements Runnable {
             }
         }
     }
+
+    private void handleInvite(String line) {
+        // Expected format: INVITE|RoomName|TargetUsername
+        String[] parts = line.split("\\|", 3);
+        if (parts.length != 3) {
+            sendToClient("ERROR|Invalid INVITE format");
+            return;
+        }
+        String roomName = parts[1].trim();
+        String targetUsername = parts[2].trim();
+
+        Room room = server.getRoom(roomName);
+        if (room == null || !room.hasMember(this)) {
+            sendToClient("ERROR|You are not in room: " + roomName);
+            return;
+        }
+
+        ClientHandler target = server.getClientByUsername(targetUsername);
+        if (target == null) {
+            sendToClient("ERROR|User not found: " + targetUsername);
+            return;
+        }
+
+        server.joinRoom(roomName, target);
+        target.sendToClient("INVITED|" + roomName);
+        sendToClient("INVITE_SENT|" + targetUsername + "|" + roomName);
+        System.out.println(username + " invited " + targetUsername + " to room: " + roomName);
+    }
+
     private void handleIncoming(String line) {
         try {
             if (username == null && !line.startsWith("USER|")) {
@@ -95,10 +126,12 @@ public class ClientHandler implements Runnable {
                 handleLeaveRoom(line);
             } else if (line.startsWith("OPEN|")) {
                 handleOpenRoom(line);
-            } else if (line.startsWith("USER|")){
+            } else if (line.startsWith("USER|")) {
                 handleUser(line);
             } else if (line.startsWith("IMG|")) {
                 handleImage(line);
+            } else if (line.startsWith("INVITE|")) {
+                handleInvite(line);
             } else {
                 // fallback for old behavior
                 server.broadcast(line, this);
@@ -162,25 +195,25 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleLeaveRoom(String line) {// Expected format: LEAVE|RoomName
-    String[] parts = line.split("\\|");
-    if (parts.length != 2) {
-        sendToClient("ERROR|Invalid LEAVE command format");
-        return;
+        String[] parts = line.split("\\|");
+        if (parts.length != 2) {
+            sendToClient("ERROR|Invalid LEAVE command format");
+            return;
+        }
+        String roomName = parts[1].trim();
+        Room room = server.getRoom(roomName);
+        if (room == null) {
+            sendToClient("ERROR|Room does not exist");
+            return;
+        }
+        // Remove the user from the room
+        room.removeMember(this);
+        // Notify the client
+        sendToClient("LEFT|" + roomName);
+        System.out.println("User " + username + " left room: " + roomName);
     }
-    String roomName = parts[1].trim();
-    Room room = server.getRoom(roomName);
-    if (room == null) {
-        sendToClient("ERROR|Room does not exist");
-        return;
-    }
-    // Remove the user from the room
-    room.removeMember(this);
-    // Notify the client
-    sendToClient("LEFT|" + roomName);
-    System.out.println("User " + username + " left room: " + roomName);
-}
 
-    private void handleOpenRoom(String line) { 
+    private void handleOpenRoom(String line) {
         // Expected format: OPEN|RoomName
         String[] parts = line.split("\\|");
         if (parts.length != 2) {

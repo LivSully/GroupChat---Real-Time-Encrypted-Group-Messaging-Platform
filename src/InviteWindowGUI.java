@@ -8,7 +8,8 @@ import java.util.List;
 
 public class InviteWindowGUI extends JFrame implements ActionListener {
 
-    private final DefaultListModel<String> master;
+    private final Client client;
+    private final String existingRoomName;
 
     // Step 1 components — name the chat
     private final JLabel l1 = new JLabel("Chat Name");
@@ -30,8 +31,9 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
     // Status label
     private final JLabel statusLabel = new JLabel("");
 
-    public InviteWindowGUI(DefaultListModel<String> master) {
-        this.master = master;
+    public InviteWindowGUI(Client client, String existingRoomName) {
+        this.client = client;
+        this.existingRoomName = existingRoomName;
 
         final Color LIGHT_BLUE = new Color(51, 204, 255);
         final Color DARK_GREY = Color.DARK_GRAY;
@@ -40,26 +42,39 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
 
         setLayout(null);
         getContentPane().setBackground(LIGHT_BLUE);
-        setTitle("CSC+ — Create Chat");
+        if (existingRoomName != null) {
+            setTitle("CSC+ — Add Users to " + existingRoomName);
+            createBtn.setText("Add Users");
+        } else {
+            setTitle("CSC+ — Create Chat");
+        }
 
         setSize(450, 550);
         setLocationRelativeTo(null);
 
         // Heading
-        JLabel heading = new JLabel("Create Chat");
+        JLabel heading = new JLabel(existingRoomName != null ? "Add Users to Room" : "Create Chat");
         heading.setBounds(160, 15, 150, 25);
         heading.setForeground(BLACK);
         add(heading);
 
-        // Chat name row
-        l1.setBounds(20, 55, 80, 25);
-        l1.setForeground(BLACK);
-        add(l1);
+        // Only show the chat name field when creating a NEW room
+        if (existingRoomName == null) {
+            l1.setBounds(20, 55, 80, 25);
+            l1.setForeground(BLACK);
+            add(l1);
 
-        nameField.setBounds(105, 55, 250, 25);
-        nameField.setBackground(WHITE);
-        nameField.setForeground(BLACK);
-        add(nameField);
+            nameField.setBounds(105, 55, 250, 25);
+            nameField.setBackground(WHITE);
+            nameField.setForeground(BLACK);
+            add(nameField);
+        } else {
+            // Show the room name as a read-only label
+            JLabel roomLabel = new JLabel("Room: " + existingRoomName);
+            roomLabel.setBounds(20, 55, 350, 25);
+            roomLabel.setForeground(BLACK);
+            add(roomLabel);
+        }
 
         // Invite users row
         l2.setBounds(20, 100, 80, 25);
@@ -151,42 +166,54 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
             }
 
         } else if (src == createBtn) {
-            String chatName = nameField.getText().trim();
-            if (chatName.isEmpty()) {
-                statusLabel.setText("Please enter a chat name.");
-                return;
-            }
-
+            // Collect invited users
             List<String> invited = new ArrayList<>();
             for (int i = 0; i < invitedModel.size(); i++) {
                 invited.add(invitedModel.get(i));
             }
 
-            master.addElement(chatName);
+            if (existingRoomName != null) {
+                // ── Adding users to an existing room ──
+                if (invited.isEmpty()) {
+                    statusLabel.setText("Add at least one user.");
+                    return;
+                }
+                for (String user : invited) {
+                    client.inviteUser(existingRoomName, user);
+                }
+                showConfirmation(existingRoomName, invited.size());
 
-            System.out.println("Group created: " + chatName + " | Invites: " + invited);
-
-            // Confirmation dialog
-            JDialog confirm = new JDialog(this, "Chat Created", true);
-            confirm.setLayout(new FlowLayout());
-            confirm.getContentPane().setBackground(new Color(51, 204, 255));
-            confirm.setSize(300, 120);
-            confirm.setLocationRelativeTo(this);
-
-            confirm.add(new JLabel("\"" + chatName + "\" created! Invites sent to " + invited.size() + " user(s)."));
-
-            JButton ok = new JButton("OK");
-            ok.addActionListener(ev -> {
-                confirm.dispose();
-                dispose();
-            });
-            confirm.add(ok);
-
-            confirm.setVisible(true);
+            } else {
+                // ── Creating a brand-new room ──
+                String chatName = nameField.getText().trim();
+                if (chatName.isEmpty()) {
+                    statusLabel.setText("Please enter a chat name.");
+                    return;
+                }
+                // 1. Create the room on the server (client also joins automatically)
+                client.createRoom(chatName);
+                // 2. Invite everyone in the list
+                for (String user : invited) {
+                    client.inviteUser(chatName, user);
+                }
+                showConfirmation(chatName, invited.size());
+            }
         }
     }
 
-    public static void main(String[] args) {
-        new InviteWindowGUI(new DefaultListModel<>());
+    private void showConfirmation(String chatName, int inviteCount) {
+        JDialog confirm = new JDialog(this, "Done", true);
+        confirm.setLayout(new FlowLayout());
+        confirm.getContentPane().setBackground(new Color(51, 204, 255));
+        confirm.setSize(300, 120);
+        confirm.setLocationRelativeTo(this);
+        confirm.add(new JLabel("\"" + chatName + "\" — invites sent to " + inviteCount + " user(s)."));
+        JButton ok = new JButton("OK");
+        ok.addActionListener(ev -> {
+            confirm.dispose();
+            dispose();
+        });
+        confirm.add(ok);
+        confirm.setVisible(true);
     }
 }
