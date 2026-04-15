@@ -326,7 +326,7 @@ public class Client {
         String encryptedPayload = parts[3];
         try {
             String plaintext = AESUtil.decrypt(encryptedPayload);
-            gui.receiveMessage(sender + ": " + plaintext);
+            gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext);
         } catch (Exception e) {
             gui.appendMessage("[Error decrypting message]");
         }
