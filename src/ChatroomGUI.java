@@ -124,6 +124,19 @@ public class ChatroomGUI extends JFrame {
         return sidebar;
     }
 
+    public void refreshRoomList() {
+        SwingUtilities.invokeLater(() -> {
+            chatListModel.clear();
+            if (client != null) {
+                for (String room : client.getJoinedRooms()) {
+                    if (room != null) {
+                        chatListModel.addElement(room);
+                    }
+                }
+            }
+        });
+    }
+
     // Header with logo and buttons
     private JPanel buildHeader() {
         // initialization

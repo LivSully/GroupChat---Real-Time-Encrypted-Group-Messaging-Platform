@@ -101,6 +101,7 @@ public class Client {
             }
         }
         gui.appendMessage("You cannot join more than 10 rooms.");
+        SwingUtilities.invokeLater(() -> gui.refreshRoomList());
     }
 
     // Removes a room locally from the client's room array.
@@ -284,7 +285,7 @@ public class Client {
         } else if (msg.startsWith("INVITED|")) {
             // Another user invited YOU to a room — join it
             String room = msg.split("\\|", 2)[1];
-            addRoom(room);
+            joinRoom(room);
             gui.appendMessage("You were invited to room: " + room);
 
         } else if (msg.startsWith("ERROR|")) {
