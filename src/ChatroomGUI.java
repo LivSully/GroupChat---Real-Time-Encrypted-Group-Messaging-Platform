@@ -1,3 +1,5 @@
+package src;
+
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
@@ -19,6 +21,7 @@ public class ChatroomGUI extends JFrame {
     private static final Color MSG_OTHER = new Color(240, 240, 240);
     private static final Font FONT_MAIN = new Font("SansSerif", Font.PLAIN, 14);
     private static final Font FONT_BOLD = new Font("SansSerif", Font.BOLD, 14);
+    private String username;
     private ChatController controller;
     private Client client;
 
@@ -31,7 +34,8 @@ public class ChatroomGUI extends JFrame {
     private String currentChat = null;
 
     // constructor
-    public ChatroomGUI() {
+    public ChatroomGUI(String username) {
+        this.username = username;
         // Populate chat list with dummy data
         for (int i = 1; i <= 8; i++)
             chatListModel.addElement("ChatName " + i);
@@ -138,7 +142,7 @@ public class ChatroomGUI extends JFrame {
         JButton createBtn = new JButton("Create Chat");
         createBtn.setFont(FONT_MAIN);
         createBtn.setFocusPainted(false);
-        createBtn.addActionListener(e -> new CreateChat().setVisible(true));
+        createBtn.addActionListener(e -> new InviteWindowGUI().setVisible(true));
         btns.add(logoutBtn);
         btns.add(createBtn);
         header.add(btns, BorderLayout.EAST);
@@ -252,7 +256,7 @@ public class ChatroomGUI extends JFrame {
         wrapper.setOpaque(false);
         wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JTextArea bubble = new JTextArea(renderedText);
+        JTextArea bubble = new JTextArea(username + ": " + renderedText);
         bubble.setFont(FONT_MAIN);
         bubble.setLineWrap(true);
         bubble.setWrapStyleWord(true);
@@ -381,7 +385,7 @@ public class ChatroomGUI extends JFrame {
         // Method that sends the image file to the Client class to satisfy the
         // MVC design pattern
         public void sendImage(File image) {
-            client.sendMessage(image);
+            client.sendImage(image);
         }
 
         // Method that calls the disconnect method in the Client class to satisfy the
