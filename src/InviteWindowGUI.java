@@ -87,7 +87,7 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
         add(inviteField);
 
         addBtn.setBounds(310, 100, 100, 25);
-        addBtn.setBackground(DARK_GREY);
+        addBtn.setBackground(Color.GRAY);
         addBtn.setForeground(BLACK);
         add(addBtn);
 
@@ -104,7 +104,7 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
         // Remove selected user button
         JButton removeBtn = new JButton("Remove Selected");
         removeBtn.setBounds(20, 290, 150, 25);
-        removeBtn.setBackground(DARK_GREY);
+        removeBtn.setBackground(Color.GRAY);
         removeBtn.setForeground(BLACK);
         add(removeBtn);
 
@@ -115,12 +115,12 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
 
         // Create / Cancel buttons
         createBtn.setBounds(100, 360, 120, 35);
-        createBtn.setBackground(DARK_GREY);
+        createBtn.setBackground(Color.GRAY);
         createBtn.setForeground(BLACK);
         add(createBtn);
 
         cancelBtn.setBounds(240, 360, 120, 35);
-        cancelBtn.setBackground(DARK_GREY);
+        cancelBtn.setBackground(Color.GRAY);
         cancelBtn.setForeground(BLACK);
         add(cancelBtn);
 
