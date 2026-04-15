@@ -200,6 +200,20 @@ public class ChatroomGUI extends JFrame {
         });
         btns.add(addUsersBtn);
 
+        JButton leaveBtn = new JButton("Leave Room");
+        leaveBtn.addActionListener(e -> {
+            String currentRoom = client.getCurrentRoomName();
+            if (currentRoom == null) {
+                appendMessage("Select a room first.");
+                return;
+            }
+            if (JOptionPane.showConfirmDialog(frame, "Leave \"" + currentRoom + "\"?", "Leave Room",
+                    JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                client.leaveRoom(currentRoom);
+            }
+        });
+        btns.add(leaveBtn);
+
         // Status indicator: green when connected, red on disconnect
         statusIndicator.setPreferredSize(new Dimension(12, 12));
         statusIndicator.setBackground(Color.GREEN);
