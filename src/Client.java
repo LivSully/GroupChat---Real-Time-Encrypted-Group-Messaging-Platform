@@ -29,7 +29,7 @@ public class Client {
     // Tracks which room is currently open/selected
     private int currentRoomIndex;
     // Server IP and port
-    private static final String IP_ADDRESS = "10.2.130.128";
+    private static final String IP_ADDRESS = "10.1.34.249";
     private static final int PORT = 1111;
 
     public Client(String host, int port, ChatroomGUI gui, String username) throws IOException {
