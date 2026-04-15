@@ -28,6 +28,7 @@ public class Server {
     private final List<ClientHandler> clients = new ArrayList<>();
     // BufferedWriter to log all ENCRYPTED versions of the messages to chatlog.txt
     private BufferedWriter logWriter;
+    private String timestamp;
 
     // Method that starts the server on the specified port & accepts each incoming
     // client, creates a new ClientHandler for each client, and starts a new thread
