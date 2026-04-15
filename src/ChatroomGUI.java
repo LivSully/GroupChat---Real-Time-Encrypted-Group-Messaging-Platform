@@ -1,9 +1,11 @@
 package src;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -305,6 +307,42 @@ public class ChatroomGUI extends JFrame {
                         "Could not load image: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    public void receiveImage(String room, String sender, String fileName, byte[] imageBytes) {
+        try {
+            Image img = ImageIO.read(new ByteArrayInputStream(imageBytes));
+            Image scaled = img.getScaledInstance(300, -1, Image.SCALE_SMOOTH);
+
+            JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+            wrapper.setOpaque(false);
+            wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+            // show sender name above the image
+            JPanel container = new JPanel();
+            container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+            container.setOpaque(false);
+
+            JLabel nameLabel = new JLabel(sender + " sent an image:");
+            nameLabel.setFont(FONT_MAIN);
+            nameLabel.setForeground(Color.GRAY);
+
+            JLabel lbl = new JLabel(new ImageIcon(scaled));
+            lbl.setBorder(new LineBorder(new Color(200, 200, 200), 1, true));
+
+            container.add(nameLabel);
+            container.add(lbl);
+
+            wrapper.add(container);
+            messagesPanel.add(wrapper);
+            messagesPanel.revalidate();
+            scrollToBottom();
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    "Could not load image: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
