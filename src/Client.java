@@ -29,6 +29,7 @@ public class Client {
     private String[] joinedRooms;
     // Tracks which room is currently open/selected
     private int currentRoomIndex;
+    private String timestamp;
     // Server IP and port
     private static final String IP_ADDRESS = "10.1.34.249";
     private static final int PORT = 1111;
