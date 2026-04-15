@@ -1,6 +1,7 @@
 //NEW NEW 4/15/26 1258
 package src;
-
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -193,6 +194,10 @@ public class Client {
         if (plaintext == null || plaintext.isBlank()) {
             return;
         }
+
+        String timestamp = LocalDateTime.now()
+        .format(DateTimeFormatter.ofPattern("HH:mm"));
+
         String currentRoom = getCurrentRoomName();
         if (currentRoom == null) {
             gui.appendMessage("No room selected.");
@@ -200,7 +205,7 @@ public class Client {
         }
         try {
             String encrypted = AESUtil.encrypt(plaintext);
-            sendCommand("MSG|" + currentRoom + "|" + encrypted);
+            sendCommand("MSG|" + currentRoom + "|" + timestamp + "|" + encrypted);
         } catch (Exception e) {
             gui.appendMessage("Encryption error while sending message.");
         }
