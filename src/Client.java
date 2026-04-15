@@ -21,7 +21,7 @@ public class Client {
     // Input stream to receive messages
     private BufferedReader in;
     // GUI reference
-    private ChatClientGUI gui;
+    private ChatroomGUI gui;
     // Username of the user
     private String username;
     // Stores up to 10 joined room names
@@ -32,7 +32,7 @@ public class Client {
     private static final String IP_ADDRESS = "10.2.130.128";
     private static final int PORT = 1111;
 
-    public Client(String host, int port, ChatClientGUI gui, String username) throws IOException {
+    public Client(String host, int port, ChatroomGUI gui, String username) throws IOException {
         this.gui = gui;
         this.username = username;
         this.joinedRooms = new String[10];
@@ -219,6 +219,26 @@ public class Client {
             }
         }
     }
+    public void openRoom(String roomName) {
+        if (roomName != null && !roomName.isBlank()) {
+            sendCommand("OPEN|" + roomName);
+        }
+    }
+    private void handleIncomingImage(String msg) {
+        String[] parts = msg.split("\\|", 5);
+            if (parts.length != 5) return;
+        String room = parts[1];
+        String sender = parts[2];
+        String fileName = parts[3];
+        String encryptedPayload = parts[4];
+            try {
+                byte[] encryptedBytes = Base64.getDecoder().decode(encryptedPayload);
+                byte[] imageBytes = AESUtil.decryptImage(encryptedBytes);
+            gui.receiveImage(room, sender, fileName, imageBytes);
+        } catch (Exception e) {
+            gui.appendSystemMessage("[Error decrypting image]");
+        }
+    }
 
     /**
      * Processes server responses.
@@ -257,12 +277,6 @@ public class Client {
     } else if (msg.startsWith("HISTORY_END|")) {
         // optional: tell GUI history is done
     }
-    else if (msg.startsWith("MSG|")) {
-    handleIncomingRoomMessage(msg);
-} 
-else if (msg.startsWith("HISTORY|")) {
-    handleIncomingHistory(msg);
-} 
     else {
         // fallback
         gui.appendMessage(msg);
@@ -317,7 +331,7 @@ else if (msg.startsWith("HISTORY|")) {
 }
     // Main method
     public static void main(String[] args) {
-        ChatClientGUI gui = new ChatClientGUI("User");
+        ChatroomGUI gui = new ChatroomGUI("User");
         try {
             gui.connect(IP_ADDRESS, PORT);
         } catch (IOException e) {
