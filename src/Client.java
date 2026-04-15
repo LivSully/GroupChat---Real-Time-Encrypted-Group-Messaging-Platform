@@ -207,6 +207,7 @@ public class Client {
         try {
             String encrypted = AESUtil.encrypt(plaintext);
             sendCommand("MSG|" + currentRoom + "|" + timestamp + "|" + encrypted);
+            gui.receiveMessage("[" + timestamp + "] " + username + ": " + plaintext);
         } catch (Exception e) {
             gui.appendMessage("Encryption error while sending message.");
         }
