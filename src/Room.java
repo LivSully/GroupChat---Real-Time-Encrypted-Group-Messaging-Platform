@@ -14,13 +14,12 @@ import java.io.FileReader;
 
 public class Room {
     private final String name;
-    private final ClientHandler[] members;
+    private final List<ClientHandler> members = new ArrayList<>();
     private int memberCount;
     private final String chatlogFilePath;
 
     public Room(String name) {
         this.name = name;
-        this.members = new ClientHandler[15]; // max users per room
         this.memberCount = 0;
 
         // ensure logs folder exists
