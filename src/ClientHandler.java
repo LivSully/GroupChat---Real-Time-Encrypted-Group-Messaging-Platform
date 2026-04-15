@@ -59,9 +59,32 @@ public class ClientHandler implements Runnable {
             close();
         }
     }
-
+    private void handleImage(String line) {
+        String[] parts = line.split("\\|", 4);
+        if (parts.length != 4) {
+            sendToClient("ERROR|Invalid IMG format");
+            return;
+        }
+        String roomName = parts[1].trim();
+        String fileName = parts[2].trim();
+        String encryptedImage = parts[3].trim();
+        Room room = server.getRoom(roomName);
+        if (room == null || !room.hasMember(this)) {
+            sendToClient("ERROR|Room does not exist or you are not a member");
+            return;
+        }
+        for (ClientHandler ch : room.getMembers()) {
+            if (ch != null) {
+                ch.sendToClient("IMG|" + roomName + "|" + username + "|" + fileName + "|" + encryptedImage);
+            }
+        }
+    }
     private void handleIncoming(String line) {
         try {
+            if (username == null && !line.startsWith("USER|")) {
+                sendToClient("ERROR|Authenticate first");
+                return;
+            }
             if (line.startsWith("MSG|")) {
                 handleMessage(line);
             } else if (line.startsWith("CREATE|")) {
@@ -74,6 +97,8 @@ public class ClientHandler implements Runnable {
                 handleOpenRoom(line);
             } else if (line.startsWith("USER|")){
                 handleUser(line);
+            } else if (line.startsWith("IMG|")) {
+                handleImage(line);
             } else {
                 // fallback for old behavior
                 server.broadcast(line, this);
