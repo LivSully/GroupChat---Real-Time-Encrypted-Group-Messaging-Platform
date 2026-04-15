@@ -25,6 +25,7 @@ public class ChatroomGUI extends JFrame {
     private ChatController controller;
     private Client client;
 
+    private final JPanel statusIndicator = new JPanel();
     private final JFrame frame = new JFrame(APP_TITLE);
     private final DefaultListModel<String> chatListModel = new DefaultListModel<>();
     private final JList<String> chatList = new JList<>(chatListModel);
@@ -36,9 +37,6 @@ public class ChatroomGUI extends JFrame {
     // constructor
     public ChatroomGUI(String username) {
         this.username = username;
-        // Populate chat list with dummy data
-        for (int i = 1; i <= 8; i++)
-            chatListModel.addElement("ChatName " + i);
 
         messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.Y_AXIS));
         messagesPanel.setBackground(CHAT_BG);
@@ -51,9 +49,24 @@ public class ChatroomGUI extends JFrame {
         messagesScroll.getVerticalScrollBar().setUnitIncrement(16);
 
         buildUI();
+    }
 
-        // Demo incoming message so the render path is visible on launch
-        receiveMessage("Hey there! :wave: Ready to chat? :smile:");
+    public void appendMessage(String text) {
+        SwingUtilities.invokeLater(() -> {
+            JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 2));
+            wrapper.setOpaque(false);
+            wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+            JLabel label = new JLabel(text);
+            label.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            label.setForeground(new Color(140, 140, 140)); // small grey font
+            label.setBorder(new EmptyBorder(2, 8, 2, 8));
+
+            wrapper.add(label);
+            messagesPanel.add(wrapper);
+            messagesPanel.revalidate();
+            scrollToBottom();
+        });
     }
 
     // Method to set the Client instance and initialize the ChatController
@@ -92,8 +105,15 @@ public class ChatroomGUI extends JFrame {
         chatList.setFixedCellHeight(52);
         chatList.setCellRenderer(new ChatCellRenderer());
         chatList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting())
+            if (!e.getValueIsAdjusting()) {
                 currentChat = chatList.getSelectedValue();
+                if (client != null && currentChat != null) {
+                    // Tell the client which room is now open so messages route correctly
+                    int idx = chatList.getSelectedIndex();
+                    client.selectRoomByIndex(idx);
+                    client.openRoom(currentChat);
+                }
+            }
         });
 
         JScrollPane listScroll = new JScrollPane(chatList,
@@ -145,6 +165,13 @@ public class ChatroomGUI extends JFrame {
         createBtn.addActionListener(e -> new InviteWindowGUI(chatListModel).setVisible(true));
         btns.add(logoutBtn);
         btns.add(createBtn);
+
+        // Status indicator: green when connected, red on disconnect
+        statusIndicator.setPreferredSize(new Dimension(12, 12));
+        statusIndicator.setBackground(Color.GREEN);
+        statusIndicator.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
+        left.add(statusIndicator);
+
         header.add(btns, BorderLayout.EAST);
         return header;
     }
@@ -232,49 +259,96 @@ public class ChatroomGUI extends JFrame {
         if (raw.isEmpty())
             return;
 
-        String encoded = EmojiRegistry.encode(raw); // encrypt & send this
-        String rendered = EmojiRegistry.render(encoded); // display this
+        // Encode any raw Unicode emoji → :shortcode: before encrypting
+        String encoded = EmojiRegistry.encode(raw);
 
-        System.out.println("[SEND encoded]  " + encoded);
-        addMessageBubble(rendered, true);
+        // Display immediately on our side (render shortcodes back to emoji for display)
+        addMessageBubble(username + ": " + EmojiRegistry.render(encoded), true);
         typingField.setText("");
         scrollToBottom();
+
+        // Hand off to client → AESUtil.encrypt → server
+        if (controller != null) {
+            controller.sendMessage(encoded);
+        } else {
+            appendMessage("Not connected — message not sent.");
+        }
     }
 
     // call this with decrypted text received from the server to display it in the
     // chat area
     public void receiveMessage(String encodedMessage) {
-        System.out.println("[RECV encoded]  " + encodedMessage);
-        addMessageBubble(EmojiRegistry.render(encodedMessage), false);
-        scrollToBottom();
+        SwingUtilities.invokeLater(() -> {
+            System.out.println("[RECV encoded]  " + encodedMessage);
+            addMessageBubble(EmojiRegistry.render(encodedMessage), false);
+            scrollToBottom();
+        });
+    }
+
+    public void receiveImage(String room, String sender, String fileName, byte[] imageBytes) {
+        SwingUtilities.invokeLater(() -> {
+            // Scale to max 300 px wide for display
+            ImageIcon icon = new ImageIcon(imageBytes);
+            Image scaled = icon.getImage().getScaledInstance(300, -1, Image.SCALE_SMOOTH);
+
+            JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+            wrapper.setOpaque(false);
+            wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+            JPanel bubble = new JPanel(new BorderLayout(0, 4));
+            bubble.setBackground(MSG_OTHER);
+            bubble.setBorder(new CompoundBorder(
+                    new LineBorder(new Color(200, 200, 200), 1, true),
+                    new EmptyBorder(6, 10, 6, 10)));
+
+            // Sender + filename caption above image
+            JLabel caption = new JLabel(sender + ": " + fileName);
+            caption.setFont(new Font("SansSerif", Font.ITALIC, 11));
+            caption.setForeground(new Color(100, 100, 100));
+            bubble.add(caption, BorderLayout.NORTH);
+
+            JLabel imgLabel = new JLabel(new ImageIcon(scaled));
+            bubble.add(imgLabel, BorderLayout.CENTER);
+
+            wrapper.add(bubble);
+            messagesPanel.add(wrapper);
+            messagesPanel.revalidate();
+            scrollToBottom();
+        });
+    }
+
+    public JPanel getStatusIndicator() {
+        return statusIndicator;
     }
 
     // Append a rendered bubble to the chat panel
     public void addMessageBubble(String renderedText, boolean isSelf) {
-        JPanel wrapper = new JPanel(
-                new FlowLayout(isSelf ? FlowLayout.RIGHT : FlowLayout.LEFT, 8, 4));
-        wrapper.setOpaque(false);
-        wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        SwingUtilities.invokeLater(() -> {
+            JPanel wrapper = new JPanel(
+                    new FlowLayout(isSelf ? FlowLayout.RIGHT : FlowLayout.LEFT, 8, 4));
+            wrapper.setOpaque(false);
+            wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JTextArea bubble = new JTextArea(username + ": " + renderedText);
-        bubble.setFont(FONT_MAIN);
-        bubble.setLineWrap(true);
-        bubble.setWrapStyleWord(true);
-        bubble.setEditable(false);
-        bubble.setFocusable(false);
-        bubble.setBackground(isSelf ? MSG_SELF : MSG_OTHER);
-        bubble.setBorder(new CompoundBorder(
-                new LineBorder(isSelf ? new Color(160, 200, 230)
-                        : new Color(200, 200, 200), 1, true),
-                new EmptyBorder(6, 10, 6, 10)));
+            JTextArea bubble = new JTextArea(renderedText);
+            bubble.setFont(FONT_MAIN);
+            bubble.setLineWrap(true);
+            bubble.setWrapStyleWord(true);
+            bubble.setEditable(false);
+            bubble.setFocusable(false);
+            bubble.setBackground(isSelf ? MSG_SELF : MSG_OTHER);
+            bubble.setBorder(new CompoundBorder(
+                    new LineBorder(isSelf ? new Color(160, 200, 230)
+                            : new Color(200, 200, 200), 1, true),
+                    new EmptyBorder(6, 10, 6, 10)));
 
-        bubble.setSize(new Dimension(500, Short.MAX_VALUE));
-        Dimension pref = bubble.getPreferredSize();
-        bubble.setPreferredSize(new Dimension(Math.min(pref.width + 20, 500), pref.height));
+            bubble.setSize(new Dimension(500, Short.MAX_VALUE));
+            Dimension pref = bubble.getPreferredSize();
+            bubble.setPreferredSize(new Dimension(Math.min(pref.width + 20, 500), pref.height));
 
-        wrapper.add(bubble);
-        messagesPanel.add(wrapper);
-        messagesPanel.revalidate();
+            wrapper.add(bubble);
+            messagesPanel.add(wrapper);
+            messagesPanel.revalidate();
+        });
     }
 
     // Image upload handler
@@ -284,27 +358,47 @@ public class ChatroomGUI extends JFrame {
         chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
                 "Image files", "png", "jpg", "jpeg", "gif", "bmp", "webp"));
 
-        if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-            try {
-                File file = chooser.getSelectedFile();
-                Image scaled = new ImageIcon(file.getAbsolutePath())
-                        .getImage().getScaledInstance(300, -1, Image.SCALE_SMOOTH);
+        if (chooser.showOpenDialog(frame) != JFileChooser.APPROVE_OPTION)
+            return;
 
-                JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-                wrapper.setOpaque(false);
-                wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-                JLabel lbl = new JLabel(new ImageIcon(scaled));
-                lbl.setBorder(new LineBorder(new Color(160, 200, 230), 1, true));
-                wrapper.add(lbl);
+        File file = chooser.getSelectedFile();
+        try {
+            // Preview locally
+            Image scaled = new ImageIcon(file.getAbsolutePath())
+                    .getImage().getScaledInstance(300, -1, Image.SCALE_SMOOTH);
 
-                messagesPanel.add(wrapper);
-                messagesPanel.revalidate();
-                scrollToBottom();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame,
-                        "Could not load image: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+            JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+            wrapper.setOpaque(false);
+            wrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+            JPanel bubble = new JPanel(new BorderLayout(0, 4));
+            bubble.setBackground(MSG_SELF);
+            bubble.setBorder(new CompoundBorder(
+                    new LineBorder(new Color(160, 200, 230), 1, true),
+                    new EmptyBorder(6, 10, 6, 10)));
+
+            JLabel caption = new JLabel(username + ": " + file.getName());
+            caption.setFont(new Font("SansSerif", Font.ITALIC, 11));
+            caption.setForeground(new Color(100, 100, 100));
+            bubble.add(caption, BorderLayout.NORTH);
+            bubble.add(new JLabel(new ImageIcon(scaled)), BorderLayout.CENTER);
+
+            wrapper.add(bubble);
+            messagesPanel.add(wrapper);
+            messagesPanel.revalidate();
+            scrollToBottom();
+
+            // Encrypt and transmit via client
+            if (controller != null) {
+                controller.sendImage(file);
+            } else {
+                appendMessage("Not connected — image not sent.");
             }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(frame,
+                    "Could not load image: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
