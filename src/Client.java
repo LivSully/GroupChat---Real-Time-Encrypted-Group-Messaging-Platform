@@ -68,7 +68,7 @@ public class Client {
             String encoded = Base64.getEncoder().encodeToString(encryptedBytes);
 
             // Send command
-            sendCommand("IMG|" + currentRoom + "|" + file.getName() + "|" + encoded);
+            sendCommand(MessageFactory.buildImageMessage(currentRoom, file.getName(), encoded));
 
         } catch (Exception e) {
             gui.appendMessage("Error sending image.");
@@ -187,10 +187,16 @@ public class Client {
         sendCommand("INVITE|" + roomName + "|" + targetUsername);
     }
 
-    /*
-     * Sends a message to the currently selected room.
-     * User does NOT type room name manually; client adds it automatically.
-     */
+    private static class MessageFactory {
+        public static String buildTextMessage(String room, String timestamp, String encryptedText) {
+            return "MSG|" + room + "|" + timestamp + "|" + encryptedText;
+        }
+
+        public static String buildImageMessage(String room, String fileName, String encodedEncryptedImage) {
+            return "IMG|" + room + "|" + fileName + "|" + encodedEncryptedImage;
+        }
+    }
+
     public void sendMessage(String plaintext) {
         if (plaintext == null || plaintext.isBlank()) {
             return;
@@ -206,7 +212,7 @@ public class Client {
         }
         try {
             String encrypted = AESUtil.encrypt(plaintext);
-            sendCommand("MSG|" + currentRoom + "|" + timestamp + "|" + encrypted);
+            sendCommand(MessageFactory.buildTextMessage(currentRoom, timestamp, encrypted));
             gui.receiveMessage("[" + timestamp + "] " + username + ": " + plaintext);
         } catch (Exception e) {
             gui.appendMessage("Encryption error while sending message.");
