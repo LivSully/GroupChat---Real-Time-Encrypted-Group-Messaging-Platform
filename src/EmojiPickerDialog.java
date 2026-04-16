@@ -28,6 +28,8 @@ public class EmojiPickerDialog extends JDialog {
     private final JTextField searchField = new JTextField();
     private final JLabel hintLabel = new JLabel(" ");
 
+    // Constructor: initializes the dialog, builds the UI, and populates the grid
+    // with all emojis
     public EmojiPickerDialog(Frame parent) {
         super(parent, "Insert Emoji", true);
 
@@ -75,6 +77,7 @@ public class EmojiPickerDialog extends JDialog {
         gridPanel.setLayout(new GridLayout(0, COLS, 2, 2));
         gridPanel.setBackground(Color.WHITE);
 
+        // Wrap grid in scroll pane to allow scrolling when there are many emojis
         JScrollPane scroll = new JScrollPane(gridPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -90,6 +93,7 @@ public class EmojiPickerDialog extends JDialog {
         hintLabel.setForeground(new Color(90, 90, 90));
         bottomPanel.add(hintLabel, BorderLayout.CENTER);
 
+        // Cancel button on the right
         JButton cancelBtn = new JButton("Cancel");
         cancelBtn.addActionListener(e -> dispose());
         bottomPanel.add(cancelBtn, BorderLayout.EAST);
@@ -102,6 +106,8 @@ public class EmojiPickerDialog extends JDialog {
         populateGrid(searchField.getText().trim().toLowerCase());
     }
 
+    // populates the grid with emojis whose shortcodes contain the query string (or
+    // all if query is empty)
     private void populateGrid(String query) {
         gridPanel.removeAll();
 

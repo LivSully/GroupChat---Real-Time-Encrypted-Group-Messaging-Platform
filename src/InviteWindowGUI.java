@@ -11,11 +11,11 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
     private final Client client;
     private final String existingRoomName;
 
-    // Step 1 components — name the chat
+    // Chat name components
     private final JLabel l1 = new JLabel("Chat Name");
     private final JTextField nameField = new JTextField();
 
-    // Step 2 components — invite users
+    // Invite users components
     private final JLabel l2 = new JLabel("Invite Users");
     private final JTextField inviteField = new JTextField();
     private final JButton addBtn = new JButton("Add User");
@@ -31,6 +31,8 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
     // Status label
     private final JLabel statusLabel = new JLabel("");
 
+    // Constructor: initializes the dialog, builds the UI, and populates the grid
+    // with all emojis
     public InviteWindowGUI(Client client, String existingRoomName) {
         this.client = client;
         this.existingRoomName = existingRoomName;
@@ -40,6 +42,7 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
         final Color WHITE = Color.WHITE;
         final Color BLACK = Color.BLACK;
 
+        // Basic window setup
         setLayout(null);
         getContentPane().setBackground(LIGHT_BLUE);
         if (existingRoomName != null) {
@@ -97,6 +100,8 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
         invitedLabel.setForeground(BLACK);
         add(invitedLabel);
 
+        // Use a JScrollPane to make the invited users list scrollable when there are
+        // many invites
         JScrollPane scroll = new JScrollPane(invitedList);
         scroll.setBounds(20, 163, 390, 120);
         add(scroll);
@@ -139,6 +144,7 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         Object src = e.getSource();
 
+        // Handle button clicks and invite field submissions
         if (src == cancelBtn) {
             dispose();
 
@@ -156,6 +162,7 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
             inviteField.setText("");
             statusLabel.setText("Added: " + username);
 
+            // Remove selected user from the invited list
         } else if (e.getActionCommand().equals("Remove Selected")) {
             int selected = invitedList.getSelectedIndex();
             if (selected >= 0) {
@@ -184,7 +191,7 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
                 showConfirmation(existingRoomName, invited.size());
 
             } else {
-                // ── Creating a brand-new room ──
+                // Creating a brand-new room
                 String chatName = nameField.getText().trim();
                 if (chatName.isEmpty()) {
                     statusLabel.setText("Please enter a chat name.");
@@ -201,6 +208,9 @@ public class InviteWindowGUI extends JFrame implements ActionListener {
         }
     }
 
+    // After successfully creating the chat or adding users, show a confirmation
+    // dialog summarizing the action and then close the invite window when the user
+    // clicks OK.
     private void showConfirmation(String chatName, int inviteCount) {
         JDialog confirm = new JDialog(this, "Done", true);
         confirm.setLayout(new FlowLayout());

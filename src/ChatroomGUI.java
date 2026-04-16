@@ -51,6 +51,8 @@ public class ChatroomGUI extends JFrame {
         buildUI();
     }
 
+    // Method to append a system message (like errors or notifications) to the chat
+    // area
     public void appendMessage(String text) {
         SwingUtilities.invokeLater(() -> {
             JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 2));
@@ -117,6 +119,7 @@ public class ChatroomGUI extends JFrame {
             }
         });
 
+        // Wrap JList in JScrollPane to allow scrolling when there are many chats
         JScrollPane listScroll = new JScrollPane(chatList,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -125,6 +128,7 @@ public class ChatroomGUI extends JFrame {
         return sidebar;
     }
 
+    // Clear all messages from the chat area (e.g. when switching rooms)
     public void clearMessages() {
         SwingUtilities.invokeLater(() -> {
             messagesPanel.removeAll();
@@ -133,6 +137,8 @@ public class ChatroomGUI extends JFrame {
         });
     }
 
+    // Refresh the chat list in the sidebar to show the current rooms the user has
+    // joined
     public void refreshRoomList() {
         SwingUtilities.invokeLater(() -> {
             chatListModel.clear();
@@ -200,6 +206,7 @@ public class ChatroomGUI extends JFrame {
         });
         btns.add(addUsersBtn);
 
+        // Leave room button (only shows if a room is currently selected)
         JButton leaveBtn = new JButton("Leave Room");
         leaveBtn.addActionListener(e -> {
             String currentRoom = client.getCurrentRoomName();
@@ -322,8 +329,8 @@ public class ChatroomGUI extends JFrame {
         }
     }
 
-    // call this with decrypted text received from the server to display it in the
-    // chat area
+    // called by Client when a new message is received from the server, to display
+    // in the chat area
     public void receiveMessage(String encodedMessage) {
         SwingUtilities.invokeLater(() -> {
             System.out.println("[RECV encoded]  " + encodedMessage);
@@ -332,6 +339,8 @@ public class ChatroomGUI extends JFrame {
         });
     }
 
+    // called by Client when a new image message is received from the server, to
+    // display in the chat area
     public void receiveImage(String room, String sender, String fileName, byte[] imageBytes) {
         SwingUtilities.invokeLater(() -> {
             // Scale to max 300 px wide for display

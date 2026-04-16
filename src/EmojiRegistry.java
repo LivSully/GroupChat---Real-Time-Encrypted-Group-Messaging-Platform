@@ -11,7 +11,7 @@ public final class EmojiRegistry {
     static {
         Map<String, String> m = new LinkedHashMap<>();
 
-        // Smileys & emotion
+        // A small set of common emojis for demonstration; can be expanded as needed
         m.put("smile", "😊");
         m.put("grin", "😁");
         m.put("laugh", "😂");
