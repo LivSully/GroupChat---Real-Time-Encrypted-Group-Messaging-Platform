@@ -30,10 +30,11 @@ public class Client {
     // Tracks which room is currently open/selected
     private int currentRoomIndex;
     // Server IP and port
-    private static final String IP_ADDRESS = "10.1.34.249";
+    private static final String IP_ADDRESS = "10.2.130.202";
     private static final int PORT = 1111;
 
-    // Constructor method that connects to the server and starts the client listener thread
+    // Constructor method that connects to the server and starts the client listener
+    // thread
     public Client(String host, int port, ChatroomGUI gui, String username) throws IOException {
         this.gui = gui;
         this.username = username;
@@ -60,7 +61,7 @@ public class Client {
         try {
             // Read file into byte array
             byte[] fileBytes = Files.readAllBytes(file.toPath());
-            // Encrypt bytes 
+            // Encrypt bytes
             byte[] encryptedBytes = AESUtil.encryptImage(fileBytes);
             // Convert to Base64 string so it can be sent as text
             String encoded = Base64.getEncoder().encodeToString(encryptedBytes);
@@ -215,7 +216,8 @@ public class Client {
         }
     }
 
-    // Class that continuously listens for messages sent from the server and processes them 
+    // Class that continuously listens for messages sent from the server and
+    // processes them
     private class ClientListener implements Runnable {
         @Override
         public void run() {
@@ -302,8 +304,7 @@ public class Client {
         } else if (msg.startsWith("ERROR|")) {
             gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);
 
-        }
-        else if (msg.startsWith("MSG|")) {
+        } else if (msg.startsWith("MSG|")) {
             handleIncomingRoomMessage(msg);
 
         } else if (msg.startsWith("HISTORY|")) {
@@ -314,15 +315,16 @@ public class Client {
         }
     }
 
-    // Method that handles encrypted messages and sends the decrypted message to the GUI
+    // Method that handles encrypted messages and sends the decrypted message to the
+    // GUI
     private void handleIncomingRoomMessage(String msg) {
-        String[] parts = msg.split("\\|", 5); 
+        String[] parts = msg.split("\\|", 5);
         if (parts.length != 5)
             return;
         String room = parts[1];
         String sender = parts[2];
-        String timestamp = parts[3]; 
-        String encryptedPayload = parts[4]; 
+        String timestamp = parts[3];
+        String encryptedPayload = parts[4];
         try {
             String plaintext = AESUtil.decrypt(encryptedPayload);
             gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext);
@@ -364,8 +366,8 @@ public class Client {
             String sender = p[2];
             String timestamp = p[3];
             try {
-                String plaintext = AESUtil.decrypt(p[4]); 
-                gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext); 
+                String plaintext = AESUtil.decrypt(p[4]);
+                gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext);
             } catch (Exception e) {
                 gui.appendMessage("[Error decrypting history message]");
             }
@@ -382,7 +384,7 @@ public class Client {
             try {
                 byte[] encryptedBytes = Base64.getDecoder().decode(p[4]);
                 byte[] imageBytes = AESUtil.decryptImage(encryptedBytes);
-                gui.receiveImage(room, sender, fileName, imageBytes); 
+                gui.receiveImage(room, sender, fileName, imageBytes);
             } catch (Exception e) {
                 gui.appendMessage("[Error loading history image]");
             }

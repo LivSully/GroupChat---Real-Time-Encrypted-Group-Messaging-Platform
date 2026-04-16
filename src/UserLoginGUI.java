@@ -196,7 +196,7 @@ public class UserLoginGUI extends JFrame implements ActionListener {
             showMessage("Login Successful", "Welcome, " + username + "!", JOptionPane.INFORMATION_MESSAGE);
             try {
                 ChatroomGUI chatGUI = new ChatroomGUI(username);
-                chatGUI.connect("10.1.34.249", 1111);
+                chatGUI.connect("10.2.130.202", 1111);
                 dispose();
             } catch (IOException e) {
                 showMessage("Error", "Failed to connect to chat server.", JOptionPane.ERROR_MESSAGE);
