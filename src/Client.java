@@ -1,4 +1,3 @@
-//NEW NEW 4/15/26 1258
 package src;
 
 import java.time.LocalDateTime;
@@ -34,6 +33,7 @@ public class Client {
     private static final String IP_ADDRESS = "10.1.34.249";
     private static final int PORT = 1111;
 
+    // Constructor method that connects to the server and starts the client listener thread
     public Client(String host, int port, ChatroomGUI gui, String username) throws IOException {
         this.gui = gui;
         this.username = username;
@@ -48,6 +48,7 @@ public class Client {
         new Thread(new ClientListener()).start();
     }
 
+    // Method that sends an encrypted image to the server
     public void sendImage(File file) {
         if (file == null)
             return;
@@ -56,31 +57,26 @@ public class Client {
             gui.appendMessage("No Room Selected!!");
             return;
         }
-
         try {
             // Read file into byte array
             byte[] fileBytes = Files.readAllBytes(file.toPath());
-
-            // Encrypt bytes (you'll add this method in AESUtil)
+            // Encrypt bytes 
             byte[] encryptedBytes = AESUtil.encryptImage(fileBytes);
-
             // Convert to Base64 string so it can be sent as text
             String encoded = Base64.getEncoder().encodeToString(encryptedBytes);
-
             // Send command
             sendCommand(MessageFactory.buildImageMessage(currentRoom, file.getName(), encoded));
-
         } catch (Exception e) {
             gui.appendMessage("Error sending image.");
         }
     }
 
-    // Encrypts and sends any command to the server.
+    // Method that sends a command to the server
     private void sendCommand(String command) {
         out.println(command);
     }
 
-    // Adds a room locally to the client's room array.
+    // Method that adds a room to the client's room array
     public void addRoom(String roomName) {
         if (roomName == null || roomName.isBlank()) {
             return;
@@ -94,7 +90,6 @@ public class Client {
         for (int i = 0; i < joinedRooms.length; i++) {
             if (joinedRooms[i] == null) {
                 joinedRooms[i] = roomName;
-
                 // if no room is currently selected, select first added room
                 if (currentRoomIndex == -1) {
                     currentRoomIndex = i;
@@ -106,7 +101,7 @@ public class Client {
         gui.appendMessage("You cannot join more than 10 rooms.");
     }
 
-    // Removes a room locally from the client's room array.
+    // Method that removes a room from the client's room array
     public void removeRoom(String roomName) {
         for (int i = 0; i < joinedRooms.length; i++) {
             if (roomName != null && roomName.equals(joinedRooms[i])) {
@@ -127,20 +122,19 @@ public class Client {
         }
     }
 
-    // Returns the array of joined rooms.
-
+    // Method that returns the array of joined rooms
     public String[] getJoinedRooms() {
         return joinedRooms;
     }
 
-    // Sets the currently selected room based on left-side tab index.
+    // Method that sets the currently selected room based on sidebar's index
     public void selectRoomByIndex(int index) {
         if (index >= 0 && index < joinedRooms.length && joinedRooms[index] != null) {
             currentRoomIndex = index;
         }
     }
 
-    // Returns the currently selected room name.
+    // Method that returns the name of the currently selected room
     public String getCurrentRoomName() {
         if (currentRoomIndex == -1) {
             return null;
@@ -148,7 +142,7 @@ public class Client {
         return joinedRooms[currentRoomIndex];
     }
 
-    // Sends a request to create a room.
+    // Method that sends a create room command to the server
     public void createRoom(String roomName) {
         if (roomName == null || roomName.isBlank()) {
             gui.appendMessage("Room name cannot be empty.");
@@ -158,7 +152,7 @@ public class Client {
         sendCommand("CREATE|" + roomName);
     }
 
-    // Sends a request to join a room.
+    // Method that sends a join room command to the server
     public void joinRoom(String roomName) {
         if (roomName == null || roomName.isBlank()) {
             gui.appendMessage("Room name cannot be empty.");
@@ -168,7 +162,7 @@ public class Client {
         sendCommand("JOIN|" + roomName);
     }
 
-    // Sends a request to leave a room.
+    // Method that sends a leave room command to the server
     public void leaveRoom(String roomName) {
         if (roomName == null || roomName.isBlank()) {
             gui.appendMessage("Room name cannot be empty.");
@@ -178,7 +172,7 @@ public class Client {
         sendCommand("LEAVE|" + roomName);
     }
 
-    // Sends a request to invite another user to a room.
+    // Method that sends an invite user command to the server
     public void inviteUser(String roomName, String targetUsername) {
         if (roomName == null || roomName.isBlank() || targetUsername == null || targetUsername.isBlank()) {
             gui.appendMessage("Room name and username cannot be empty.");
@@ -187,6 +181,7 @@ public class Client {
         sendCommand("INVITE|" + roomName + "|" + targetUsername);
     }
 
+    // Class to satisfy the MVC design principle by consistently building commands
     private static class MessageFactory {
         public static String buildTextMessage(String room, String timestamp, String encryptedText) {
             return "MSG|" + room + "|" + timestamp + "|" + encryptedText;
@@ -197,6 +192,7 @@ public class Client {
         }
     }
 
+    // Method that sends an encrypted string message to the server
     public void sendMessage(String plaintext) {
         if (plaintext == null || plaintext.isBlank()) {
             return;
@@ -219,9 +215,7 @@ public class Client {
         }
     }
 
-    // Handles responses and messages from the server.
-    // Server sends encrypted lines, so decrypt first.
-    /* */
+    // Class that continuously listens for messages sent from the server and processes them 
     private class ClientListener implements Runnable {
         @Override
         public void run() {
@@ -246,12 +240,14 @@ public class Client {
         }
     }
 
+    // Method that calls for the full room history from the server
     public void openRoom(String roomName) {
         if (roomName != null && !roomName.isBlank()) {
             sendCommand("OPEN|" + roomName);
         }
     }
 
+    // Method that handles encrypted images and sends the decrypted image to the GUI
     private void handleIncomingImage(String msg) {
         String[] parts = msg.split("\\|", 5);
         if (parts.length != 5)
@@ -269,9 +265,7 @@ public class Client {
         }
     }
 
-    /**
-     * Processes server responses.
-     */
+    // Method that handles various server messages based on the command prefix
     private void handleServerMessage(String msg) {
 
         if (msg.startsWith("USERNAME_SET|")) {
@@ -309,29 +303,26 @@ public class Client {
             gui.appendMessage("[Server Error] " + msg.split("\\|", 2)[1]);
 
         }
-        // NEW: decrypt only the encrypted payload
         else if (msg.startsWith("MSG|")) {
             handleIncomingRoomMessage(msg);
 
         } else if (msg.startsWith("HISTORY|")) {
             handleIncomingHistory(msg);
 
-        } else if (msg.startsWith("HISTORY_END|")) {
-            // optional: tell GUI history is done
         } else {
-            // fallback
             gui.appendMessage(msg);
         }
     }
 
+    // Method that handles encrypted messages and sends the decrypted message to the GUI
     private void handleIncomingRoomMessage(String msg) {
-        String[] parts = msg.split("\\|", 5); // was 4, now 5
+        String[] parts = msg.split("\\|", 5); 
         if (parts.length != 5)
             return;
         String room = parts[1];
         String sender = parts[2];
-        String timestamp = parts[3]; // parse the timestamp
-        String encryptedPayload = parts[4]; // was parts[3]
+        String timestamp = parts[3]; 
+        String encryptedPayload = parts[4]; 
         try {
             String plaintext = AESUtil.decrypt(encryptedPayload);
             gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext);
@@ -340,7 +331,7 @@ public class Client {
         }
     }
 
-    // Disconnect method to close streams/socket.
+    // Method that disconnects the client
     public void disconnect() {
         try {
             if (out != null) {
@@ -357,9 +348,8 @@ public class Client {
         }
     }
 
-    // Handle Incoming History
+    // Method that requests the chat history for a room from the server
     private void handleIncomingHistory(String msg) {
-        // Format: HISTORY|<full_saved_line>
         String[] parts = msg.split("\\|", 2);
         if (parts.length < 2)
             return;
@@ -367,15 +357,15 @@ public class Client {
         String line = parts[1];
 
         if (line.startsWith("MSG|")) {
-            String[] p = line.split("\\|", 5); // was 4, now 5
+            String[] p = line.split("\\|", 5);
             if (p.length != 5)
                 return;
 
             String sender = p[2];
-            String timestamp = p[3]; // parse timestamp
+            String timestamp = p[3];
             try {
-                String plaintext = AESUtil.decrypt(p[4]); // was p[3]
-                gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext); // added timestamp
+                String plaintext = AESUtil.decrypt(p[4]); 
+                gui.receiveMessage("[" + timestamp + "] " + sender + ": " + plaintext); 
             } catch (Exception e) {
                 gui.appendMessage("[Error decrypting history message]");
             }
@@ -392,7 +382,7 @@ public class Client {
             try {
                 byte[] encryptedBytes = Base64.getDecoder().decode(p[4]);
                 byte[] imageBytes = AESUtil.decryptImage(encryptedBytes);
-                gui.receiveImage(room, sender, fileName, imageBytes); // no change needed here
+                gui.receiveImage(room, sender, fileName, imageBytes); 
             } catch (Exception e) {
                 gui.appendMessage("[Error loading history image]");
             }

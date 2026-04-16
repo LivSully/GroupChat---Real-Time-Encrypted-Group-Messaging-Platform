@@ -1,4 +1,3 @@
-//NEW NEW 4/15/26 1258
 package src;
 
 import java.io.BufferedReader;
@@ -6,11 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
@@ -25,6 +20,7 @@ public class ClientHandler implements Runnable {
         this.server = server;
     }
 
+    // Method that handles a command and registers the username of the client
     private void handleUser(String line) {
         String[] parts = line.split("\\|");
         if (parts.length != 2) {
@@ -32,19 +28,16 @@ public class ClientHandler implements Runnable {
             return;
         }
         this.username = parts[1].trim();
-        // Confirm to client
         sendToClient("USERNAME_SET|" + username);
         System.out.println("User connected as: " + username);
     }
 
-    // Method that listens for incoming messages from the client, and when a message
-    // is received, it broadcasts the message to all clients through the server.
+    // Method that continuously listens for incoming commands from the client
     @Override
     public void run() {
         try {
             String line;
-            // Sets up the input and output streams so the clients can communicate with the
-            // server
+            // Sets up the input and output streams so the clients can communicate with the server
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -57,12 +50,12 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             System.out.println("Error handling client: " + e.getMessage());
         } finally {
-            // Removes the client from the server and closes their socket
             server.removeClient(this);
             close();
         }
     }
 
+    // Method that handles incoming encrypted images and broadcasts them to the appropriate room members
     private void handleImage(String line) {
         String[] parts = line.split("\\|", 4);
         if (parts.length != 4) {
@@ -85,6 +78,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Method that handles INVITE|Room|TargetUsername commands
     private void handleInvite(String line) {
         // Expected format: INVITE|RoomName|TargetUsername
         String[] parts = line.split("\\|", 4);
@@ -113,6 +107,7 @@ public class ClientHandler implements Runnable {
         System.out.println(username + " invited " + targetUsername + " to room: " + roomName);
     }
 
+    // Method that handles all incoming commands and routes them to the appropriate handler method
     private void handleIncoming(String line) {
         try {
             if (username == null && !line.startsWith("USER|")) {
@@ -144,31 +139,29 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // Method that handles MSG|Room|Timestamp|EncryptedMessage commands
     private void handleMessage(String line) {
-        String[] parts = line.split("\\|", 4); // was 3
+        String[] parts = line.split("\\|", 4); 
         if (parts.length != 4) {
             sendToClient("ERROR|Invalid MSG format");
             return;
         }
         String roomName = parts[1].trim();
-        String encryptedMessage = parts[3].trim(); // was parts[2]
+        String encryptedMessage = parts[3].trim(); 
         boolean success = server.broadcastToRoom(roomName, encryptedMessage, this);
         if (!success) {
             sendToClient("ERROR|Room does not exist or you are not a member");
         }
     }
 
+    // Method that handles CREATE|Room commands
     private void handleCreateRoom(String line) {
-        // Expected format: CREATE|RoomName
         String[] parts = line.split("\\|", 2);
         if (parts.length < 2) {
             sendToClient("ERROR|Invalid CREATE command format");
             return;
         }
-
-        // Ask server
         String roomName = parts[1];
-        // Ask server to create the room
         boolean created = server.createRoom(roomName);
         if (created) {
             server.joinRoom(roomName, this);
@@ -179,15 +172,14 @@ public class ClientHandler implements Runnable {
         System.out.println("User " + username + " requested to create room: " + roomName);
     }
 
+    // Method that handles JOIN|Room commands
     private void handleJoinRoom(String line) {
-        // Expected format: JOIN|RoomName
         String[] parts = line.split("\\|");
         if (parts.length != 2) {
             sendToClient("ERROR|Invalid JOIN command format");
             return;
         }
         String roomName = parts[1];
-        // Ask server to add this user to the room
         boolean joined = server.joinRoom(roomName, this);
         if (joined) {
             sendToClient("JOINED|" + roomName);
@@ -197,7 +189,8 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleLeaveRoom(String line) {// Expected format: LEAVE|RoomName
+    // Method that handles LEAVE|Room commands
+    private void handleLeaveRoom(String line) {
         String[] parts = line.split("\\|");
         if (parts.length != 2) {
             sendToClient("ERROR|Invalid LEAVE command format");
@@ -209,15 +202,13 @@ public class ClientHandler implements Runnable {
             sendToClient("ERROR|Room does not exist");
             return;
         }
-        // Remove the user from the room
         room.removeMember(this);
-        // Notify the client
         sendToClient("LEFT|" + roomName);
         System.out.println("User " + username + " left room: " + roomName);
     }
 
+    // Method that handles OPEN|Room commands 
     private void handleOpenRoom(String line) {
-        // Expected format: OPEN|RoomName
         String[] parts = line.split("\\|");
         if (parts.length != 2) {
             sendToClient("ERROR|Invalid OPEN format");
@@ -229,19 +220,18 @@ public class ClientHandler implements Runnable {
             sendToClient("ERROR|Room does not exist");
             return;
         }
-        // Send each encrypted line back to the client
         for (String encryptedMsg : history) {
             sendToClient("HISTORY|" + encryptedMsg);
         }
-
-        // Signal that history is done
         sendToClient("HISTORY_END|" + roomName);
     }
 
+    // Method that sends a message directly to the client
     public void sendToClient(String msg) {
         out.println(msg);
     }
 
+    // Method that returns the username of the client
     public String getUsername() {
         return username;
     }

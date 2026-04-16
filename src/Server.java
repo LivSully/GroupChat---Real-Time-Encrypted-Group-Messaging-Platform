@@ -1,4 +1,3 @@
-//NEW NEW 4/15/26 1340
 package src;
 
 import java.time.LocalDateTime;
@@ -31,9 +30,8 @@ public class Server {
     private BufferedWriter logWriter;
     private String timestamp;
 
-    // Method that starts the server on the specified port & accepts each incoming
-    // client, creates a new ClientHandler for each client, and starts a new thread
-    // for each client to listen for any incoming messages
+    // Method that starts the server on the specified port, accepts client connections,
+    // and creates a ClietnHandler for each new client
     public void start(int port) throws IOException {
         serverSocket = new ServerSocket(port);
         logWriter = new BufferedWriter(new FileWriter("chatlog.txt", true));
@@ -59,15 +57,10 @@ public class Server {
         }
     }
 
-    // Method that broadcasts the encrypted message to all of the clients that are
-    // currently connected to the server, and logs the encrypted message to
-    // chatlog.txt
+    // Method that broadcasts an encrypted message to all of the clients currently connected
+    // to the server, is not currently in use
     public void broadcast(String encryptedMsg, ClientHandler sender) {
-        // Logs the encrypted message to chatlog.txt
         logMessage(encryptedMsg);
-
-        // Sends the encrypted message to all of the clients currently connected to the
-        // server
         synchronized (clients) {
             for (ClientHandler client : clients) {
                 client.send(encryptedMsg);
@@ -75,8 +68,7 @@ public class Server {
         }
     }
 
-    // Method that logs the encrypted message to chatlog.txt, meaning that the
-    // server never has access to the plaintext chat messages
+    // Method that logs the encrypted message to a log file
     private void logMessage(String encryptedMsg) {
         try {
             logWriter.write(encryptedMsg);
@@ -95,6 +87,7 @@ public class Server {
         System.out.println("Client disconnected.");
     }
 
+    // Method that returns a client handler given the username of the client, is used for inviting others to rooms
     public synchronized ClientHandler getClientByUsername(String username) {
         for (ClientHandler c : clients) {
             if (c.getUsername() != null && c.getUsername().equals(username)) {
@@ -104,12 +97,12 @@ public class Server {
         return null;
     }
 
+    // Method that returns a Room object given the name of the Room
     public synchronized Room getRoom(String roomName) {
         return rooms.get(roomName);
     }
 
-    // Main method that creates a new instance of the Server and starts the server
-    // on port 1111
+    // Main method that creates a new instance of the Server and starts the server on port 1111
     public static void main(String[] args) {
         Server server = new Server();
 
@@ -121,6 +114,8 @@ public class Server {
         }
     }
 
+    // Method that creates a new room with the given name if the room does not already exist,
+    // and returns true if the room was created successfully, false otherwise
     public synchronized boolean createRoom(String roomName) {
         if (rooms.containsKey(roomName)) {
             return false; // Room already exists
@@ -131,6 +126,7 @@ public class Server {
         return true;
     }
 
+    // Method that adds a client to a room
     public synchronized boolean joinRoom(String roomName, ClientHandler client) {
         Room room = rooms.get(roomName);
         if (room != null) {
@@ -140,6 +136,8 @@ public class Server {
         return false; // Room does not exist
     }
 
+    // Method that broadcasts an encrypted message to all of the members of the room, 
+    // adds a timestamp, and logs the message in the room's log file
     public synchronized boolean broadcastToRoom(String roomName, String encryptedMessage, ClientHandler sender) {
         Room room = rooms.get(roomName);
         if (room == null)
@@ -160,6 +158,7 @@ public class Server {
         return true;
     }
 
+    // Method that returns the full encrypted message history of a room
     public synchronized List<String> getRoomHistory(String roomName) {
         Room room = rooms.get(roomName);
         if (room == null) {
